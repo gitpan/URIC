@@ -9,8 +9,26 @@
 /* Define if you have the strchr function.  */
 #undef HAVE_STRCHR
 
+/* Define if you have the strcmp function.  */
+#undef HAVE_STRCMP
+
+/* Define if you have the strncmp function.  */
+#undef HAVE_STRNCMP
+
+/* Define if you have the strncpy function.  */
+#undef HAVE_STRNCPY
+
+/* Define if you have the strstr function.  */
+#undef HAVE_STRSTR
+
+/* Define if you have the vsprintf function.  */
+#undef HAVE_VSPRINTF
+
 /* Define if you have the <ctype.h> header file.  */
 #undef HAVE_CTYPE_H
+
+/* Define if you have the <stdarg.h> header file.  */
+#undef HAVE_STDARG_H
 
 /* Define if you have the <stdlib.h> header file.  */
 #undef HAVE_STDLIB_H

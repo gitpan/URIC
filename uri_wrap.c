@@ -575,52 +575,63 @@ XS(_wrap_uri_free) {
     XSRETURN(argvi);
 }
 
-XS(_wrap_uri_abs) {
+XS(_wrap_uri_info) {
 
-    uri_t * _result;
+    int  _result;
     uri_t * _arg0;
-    char * _arg1;
-    int  _arg2;
     int argvi = 0;
     dXSARGS ;
 
     cv = cv;
-    if ((items < 3) || (items > 3)) 
-        croak("Usage: uri_abs(base,relative_string,relative_length);");
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_info(object);");
     if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
-        croak("Type error in argument 1 of uri_abs. Expected uri_t.");
+        croak("Type error in argument 1 of uri_info. Expected uri_t.");
         XSRETURN(1);
     }
-    _arg1 = (char *) SvPV(ST(1),na);
-    _arg2 = (int )SvIV(ST(2));
-    _result = (uri_t *)uri_abs(_arg0,_arg1,_arg2);
+    _result = (int )uri_info(_arg0);
     ST(argvi) = sv_newmortal();
-    sv_setref_pv(ST(argvi++),"uri_t", (void *) _result);
+    sv_setiv(ST(argvi++),(IV) _result);
     XSRETURN(argvi);
 }
 
-XS(_wrap_uri_abs_1) {
+XS(_wrap_uri_scheme) {
 
-    uri_t * _result;
+    char * _result;
     uri_t * _arg0;
-    uri_t * _arg1;
     int argvi = 0;
     dXSARGS ;
 
     cv = cv;
-    if ((items < 2) || (items > 2)) 
-        croak("Usage: uri_abs_1(base,relative);");
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_scheme(object);");
     if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
-        croak("Type error in argument 1 of uri_abs_1. Expected uri_t.");
+        croak("Type error in argument 1 of uri_scheme. Expected uri_t.");
         XSRETURN(1);
     }
-    if (SWIG_GetPtr(ST(1),(void **) &_arg1,"uri_t")) {
-        croak("Type error in argument 2 of uri_abs_1. Expected uri_t.");
-        XSRETURN(1);
-    }
-    _result = (uri_t *)uri_abs_1(_arg0,_arg1);
+    _result = (char *)uri_scheme(_arg0);
     ST(argvi) = sv_newmortal();
-    sv_setref_pv(ST(argvi++),"uri_t", (void *) _result);
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_host) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_host(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_host. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_host(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
     XSRETURN(argvi);
 }
 
@@ -639,6 +650,126 @@ XS(_wrap_uri_port) {
         XSRETURN(1);
     }
     _result = (char *)uri_port(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_path) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_path(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_path. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_path(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_params) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_params(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_params. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_params(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_query) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_query(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_query. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_query(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_frag) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_frag(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_frag. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_frag(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_user) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_user(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_user. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_user(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_passwd) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_passwd(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_passwd. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_passwd(_arg0);
     ST(argvi) = sv_newmortal();
     sv_setpv((SV*)ST(argvi++),(char *) _result);
     XSRETURN(argvi);
@@ -783,26 +914,6 @@ XS(_wrap_uri_uri) {
     XSRETURN(argvi);
 }
 
-XS(_wrap_uri_robots) {
-
-    char * _result;
-    uri_t * _arg0;
-    int argvi = 0;
-    dXSARGS ;
-
-    cv = cv;
-    if ((items < 1) || (items > 1)) 
-        croak("Usage: uri_robots(object);");
-    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
-        croak("Type error in argument 1 of uri_robots. Expected uri_t.");
-        XSRETURN(1);
-    }
-    _result = (char *)uri_robots(_arg0);
-    ST(argvi) = sv_newmortal();
-    sv_setpv((SV*)ST(argvi++),(char *) _result);
-    XSRETURN(argvi);
-}
-
 XS(_wrap_uri2object) {
 
     uri_t * _result;
@@ -903,6 +1014,75 @@ XS(_wrap_uri_parse) {
     _result = (int )uri_parse(_arg0);
     ST(argvi) = sv_newmortal();
     sv_setiv(ST(argvi++),(IV) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_abs) {
+
+    uri_t * _result;
+    uri_t * _arg0;
+    char * _arg1;
+    int  _arg2;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 3) || (items > 3)) 
+        croak("Usage: uri_abs(base,relative_string,relative_length);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_abs. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _arg1 = (char *) SvPV(ST(1),na);
+    _arg2 = (int )SvIV(ST(2));
+    _result = (uri_t *)uri_abs(_arg0,_arg1,_arg2);
+    ST(argvi) = sv_newmortal();
+    sv_setref_pv(ST(argvi++),"uri_t", (void *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_abs_1) {
+
+    uri_t * _result;
+    uri_t * _arg0;
+    uri_t * _arg1;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 2) || (items > 2)) 
+        croak("Usage: uri_abs_1(base,relative);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_abs_1. Expected uri_t.");
+        XSRETURN(1);
+    }
+    if (SWIG_GetPtr(ST(1),(void **) &_arg1,"uri_t")) {
+        croak("Type error in argument 2 of uri_abs_1. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (uri_t *)uri_abs_1(_arg0,_arg1);
+    ST(argvi) = sv_newmortal();
+    sv_setref_pv(ST(argvi++),"uri_t", (void *) _result);
+    XSRETURN(argvi);
+}
+
+XS(_wrap_uri_robots) {
+
+    char * _result;
+    uri_t * _arg0;
+    int argvi = 0;
+    dXSARGS ;
+
+    cv = cv;
+    if ((items < 1) || (items > 1)) 
+        croak("Usage: uri_robots(object);");
+    if (SWIG_GetPtr(ST(0),(void **) &_arg0,"uri_t")) {
+        croak("Type error in argument 1 of uri_robots. Expected uri_t.");
+        XSRETURN(1);
+    }
+    _result = (char *)uri_robots(_arg0);
+    ST(argvi) = sv_newmortal();
+    sv_setpv((SV*)ST(argvi++),(char *) _result);
     XSRETURN(argvi);
 }
 
@@ -1824,7 +2004,6 @@ XS(_wrap_perl5_uri_var_init) {
     swig_setiv("URI_INFO_RELATIVE_PATH", (long) 0x0010);
     swig_setiv("URI_INFO_EMPTY", (long) 0x0020);
     swig_setiv("URI_INFO_PARSED", (long) 0x0040);
-    swig_setiv("URI_INFO_FILE", (long) 0x0200);
     swig_setiv("URI_INFO_ROBOTS", (long) 0x0400);
     swig_setiv("URI_FURI_REAL_PATH", (long) 1);
     swig_setiv("URI_FURI_NOP", (long) 0);
@@ -1853,9 +2032,16 @@ XS(boot_uri) {
 	 newXS("uric::uri_alloc", _wrap_uri_alloc, file);
 	 newXS("uric::uri_realloc", _wrap_uri_realloc, file);
 	 newXS("uric::uri_free", _wrap_uri_free, file);
-	 newXS("uric::uri_abs", _wrap_uri_abs, file);
-	 newXS("uric::uri_abs_1", _wrap_uri_abs_1, file);
+	 newXS("uric::uri_info", _wrap_uri_info, file);
+	 newXS("uric::uri_scheme", _wrap_uri_scheme, file);
+	 newXS("uric::uri_host", _wrap_uri_host, file);
 	 newXS("uric::uri_port", _wrap_uri_port, file);
+	 newXS("uric::uri_path", _wrap_uri_path, file);
+	 newXS("uric::uri_params", _wrap_uri_params, file);
+	 newXS("uric::uri_query", _wrap_uri_query, file);
+	 newXS("uric::uri_frag", _wrap_uri_frag, file);
+	 newXS("uric::uri_user", _wrap_uri_user, file);
+	 newXS("uric::uri_passwd", _wrap_uri_passwd, file);
 	 newXS("uric::uri_netloc", _wrap_uri_netloc, file);
 	 newXS("uric::uri_auth", _wrap_uri_auth, file);
 	 newXS("uric::uri_all_path", _wrap_uri_all_path, file);
@@ -1863,12 +2049,14 @@ XS(boot_uri) {
 	 newXS("uric::uri_dump", _wrap_uri_dump, file);
 	 newXS("uric::uri_furi", _wrap_uri_furi, file);
 	 newXS("uric::uri_uri", _wrap_uri_uri, file);
-	 newXS("uric::uri_robots", _wrap_uri_robots, file);
 	 newXS("uric::uri2object", _wrap_uri2object, file);
 	 newXS("uric::uri_furi_string", _wrap_uri_furi_string, file);
 	 newXS("uric::uri_cannonicalize_string", _wrap_uri_cannonicalize_string, file);
 	 newXS("uric::uri_cannonicalize", _wrap_uri_cannonicalize, file);
 	 newXS("uric::uri_parse", _wrap_uri_parse, file);
+	 newXS("uric::uri_abs", _wrap_uri_abs, file);
+	 newXS("uric::uri_abs_1", _wrap_uri_abs_1, file);
+	 newXS("uric::uri_robots", _wrap_uri_robots, file);
 	 newXS("uric::uri_t_info_set", _wrap_uri_t_info_set, file);
 	 newXS("uric::uri_t_info_get", _wrap_uri_t_info_get, file);
 	 newXS("uric::uri_t_scheme_set", _wrap_uri_t_scheme_set, file);

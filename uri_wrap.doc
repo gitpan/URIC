@@ -49,14 +49,11 @@ $URI_INFO_EMPTY = 0x0020
 
 $URI_INFO_PARSED = 0x0040
         [ Constant: int  ]
-        * Set if the scheme is FILE. 
-
-$URI_INFO_FILE = 0x0200
-        [ Constant: int  ]
         * Set if the URI is a robots.txt URI 
 
 $URI_INFO_ROBOTS = 0x0400
         [ Constant: int  ]
+        * Actual definition in uri_schemes.h 
 
 1.  class uri_t
 ===============
@@ -143,13 +140,34 @@ uri_realloc(object,uri,uri_length);
 uri_free(object);
         [ returns void  ]
 
-uri_abs(base,relative_string,relative_length);
-        [ returns uri_t * ]
+uri_info(object);
+        [ returns int  ]
 
-uri_abs_1(base,relative);
-        [ returns uri_t * ]
+uri_scheme(object);
+        [ returns char * ]
+
+uri_host(object);
+        [ returns char * ]
 
 uri_port(object);
+        [ returns char * ]
+
+uri_path(object);
+        [ returns char * ]
+
+uri_params(object);
+        [ returns char * ]
+
+uri_query(object);
+        [ returns char * ]
+
+uri_frag(object);
+        [ returns char * ]
+
+uri_user(object);
+        [ returns char * ]
+
+uri_passwd(object);
         [ returns char * ]
 
 uri_netloc(object);
@@ -173,10 +191,6 @@ uri_furi(object);
         * URI string 
 
 uri_uri(object);
-        [ returns char * ]
-        * robots.txt URI corresponding to this URI. 
-
-uri_robots(object);
         [ returns char * ]
 
 uri2object(uri,uri_length);
@@ -236,4 +250,13 @@ uri_cannonicalize(object,flag);
 
 uri_parse(object);
         [ returns int  ]
+
+uri_abs(base,relative_string,relative_length);
+        [ returns uri_t * ]
+
+uri_abs_1(base,relative);
+        [ returns uri_t * ]
+
+uri_robots(object);
+        [ returns char * ]
 

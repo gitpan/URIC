@@ -13,10 +13,10 @@
 require 5.004;
 use strict;
 
-$::VERSION = '2.00';
+$::VERSION = '2.01';
 
 sub config_lib {
-  system("cd urilib ; ./configure ; make all")
+  system("cd urilib ; ./configure --with-pic ; make all")
 }
 
 use ExtUtils::MakeMaker;

@@ -1,15 +1,40 @@
 AC_INIT(uri.c)
+AC_CANONICAL_HOST
 
 AC_CONFIG_HEADER(config.h)
 AC_PROG_CC
 
+AC_ARG_WITH(pic,
+    [  --with-pic          generate position independant code],
+[
+if test "$ac_cv_prog_gcc" = "yes"
+then
+  PIC_CFLAGS='-fPIC'
+else
+  case "$host_os" in
+  sysv4|esix) PIC_CFLAGS='-Kpic' ;;
+  irix*) PIC_CFLAGS='-KPIC' ;;
+  sunos) PIC_CFLAGS='-pic' ;;
+  hpux*) PIC_CFLAGS='+z' ;;
+  next) PIC_CFLAGS='' ;;
+  aix) PIC_CFLAGS='' ;;
+  solaris*) PIC_CFLAGS='-fPIC' ;;
+  *) PIC_CFLAGS='-fPIC' ;;
+  esac
+fi
+AC_SUBST(PIC_CFLAGS)
+])
+
+AC_PATH_PROG(SH, sh)
+AC_SUBST(SH)
+
 AC_HEADER_STDC
 
-AC_CHECK_HEADERS(stdlib.h string.h ctype.h)
+AC_CHECK_HEADERS(stdlib.h string.h ctype.h stdarg.h)
 AC_CHECK_FUNCS(strchr memcpy strstr strcmp strncmp strncpy)
 AC_CHECK_FUNCS(vsprintf)
 
 VERSION=2.00
 AC_SUBST(VERSION)
 
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile uri_test, [chmod +x uri_test])

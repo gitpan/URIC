@@ -98,29 +98,64 @@ sub uri_free {
     my $result = uric::uri_free(@args);
     return $result;
 }
-sub uri_abs {
+sub uri_info {
     my @args = @_;
     $args[0] = tied(%{$args[0]});
-    my $result = uric::uri_abs(@args);
-    return undef if (!defined($result));
-    my %resulthash;
-    tie %resulthash, "uri_t", $result;
-    return bless \%resulthash, "uri_t";
+    my $result = uric::uri_info(@args);
+    return $result;
 }
-sub uri_abs_1 {
+sub uri_scheme {
     my @args = @_;
     $args[0] = tied(%{$args[0]});
-    $args[1] = tied(%{$args[1]});
-    my $result = uric::uri_abs_1(@args);
-    return undef if (!defined($result));
-    my %resulthash;
-    tie %resulthash, "uri_t", $result;
-    return bless \%resulthash, "uri_t";
+    my $result = uric::uri_scheme(@args);
+    return $result;
+}
+sub uri_host {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_host(@args);
+    return $result;
 }
 sub uri_port {
     my @args = @_;
     $args[0] = tied(%{$args[0]});
     my $result = uric::uri_port(@args);
+    return $result;
+}
+sub uri_path {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_path(@args);
+    return $result;
+}
+sub uri_params {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_params(@args);
+    return $result;
+}
+sub uri_query {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_query(@args);
+    return $result;
+}
+sub uri_frag {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_frag(@args);
+    return $result;
+}
+sub uri_user {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_user(@args);
+    return $result;
+}
+sub uri_passwd {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_passwd(@args);
     return $result;
 }
 sub uri_netloc {
@@ -166,12 +201,6 @@ sub uri_uri {
     my $result = uric::uri_uri(@args);
     return $result;
 }
-sub uri_robots {
-    my @args = @_;
-    $args[0] = tied(%{$args[0]});
-    my $result = uric::uri_robots(@args);
-    return $result;
-}
 sub uri2object {
     my @args = @_;
     my $result = uric::uri2object(@args);
@@ -192,6 +221,31 @@ sub uri_parse {
     my @args = @_;
     $args[0] = tied(%{$args[0]});
     my $result = uric::uri_parse(@args);
+    return $result;
+}
+sub uri_abs {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_abs(@args);
+    return undef if (!defined($result));
+    my %resulthash;
+    tie %resulthash, "uri_t", $result;
+    return bless \%resulthash, "uri_t";
+}
+sub uri_abs_1 {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    $args[1] = tied(%{$args[1]});
+    my $result = uric::uri_abs_1(@args);
+    return undef if (!defined($result));
+    my %resulthash;
+    tie %resulthash, "uri_t", $result;
+    return bless \%resulthash, "uri_t";
+}
+sub uri_robots {
+    my @args = @_;
+    $args[0] = tied(%{$args[0]});
+    my $result = uric::uri_robots(@args);
     return $result;
 }
 
@@ -274,7 +328,6 @@ package uri;
 *URI_INFO_RELATIVE_PATH = *uric::URI_INFO_RELATIVE_PATH;
 *URI_INFO_EMPTY = *uric::URI_INFO_EMPTY;
 *URI_INFO_PARSED = *uric::URI_INFO_PARSED;
-*URI_INFO_FILE = *uric::URI_INFO_FILE;
 *URI_INFO_ROBOTS = *uric::URI_INFO_ROBOTS;
 *URI_FURI_REAL_PATH = *uric::URI_FURI_REAL_PATH;
 *URI_FURI_NOP = *uric::URI_FURI_NOP;

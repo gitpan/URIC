@@ -48,7 +48,7 @@ char *strchr (), *strrchr ();
 # endif
 #endif
 
-#if STDC_HEADERS
+#if HAVE_STDARG_H
 # include <stdarg.h>
 #else
 # include <varargs.h>
@@ -58,7 +58,7 @@ char *strchr (), *strrchr ();
 #include <mpath.h>
 #include <strlower.h>
 
-#if STDC_HEADERS
+#if HAVE_STDARG_H
 void uri_error(int size_hint, char* fmt, ...);
 #else
 void uri_error(int size_hint, char* fmt, va_alist);

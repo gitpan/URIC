@@ -36,3 +36,12 @@ uri_scheme_desc_t uri_scheme_http_desc = {
   /* port_int */	80,
   /* port_char */	"80"
 };
+
+char* uri_robots(uri_t* object)
+{
+  if((object->info & URI_INFO_ROBOTS) == 0) {
+    uri_string(object, &object->robots, &object->robots_size, URI_STRING_ROBOTS_STYLE);
+    object->info |= URI_INFO_ROBOTS;
+  }
+  return object->robots;
+}

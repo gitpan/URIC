@@ -24,12 +24,13 @@
 #include <uri.h>
 #include <uri_schemes.h>
 
-static void uri_clear(uri_t* object);
-
 static int verbose = 0;
 
 static uri_t* uri_object = 0;
 
+/*
+ * Global parameters
+ */
 typedef struct mode {
   int flag;
 } uri_mode_t;
@@ -48,6 +49,9 @@ int uri_modep(int flag)
   return mode.flag & flag;
 }
 
+/*
+ * uri_t allocation and deallocation
+ */
 uri_t* uri2object(char* uri, int uri_length)
 {
   if(uri_object) {
@@ -76,20 +80,6 @@ uri_t* uri_alloc(char* uri, int uri_length)
   }
 }
 
-static void uri_clear(uri_t* object)
-{
-  object->scheme = 0;
-  object->host = 0;
-  object->port = 0;
-  object->path = 0;
-  object->params = 0;
-  object->query = 0;
-  object->frag = 0;
-  object->user = 0;
-  object->passwd = 0;
-  object->info = 0;
-}
-
 int uri_realloc(uri_t* object, char* uri, int uri_length)
 {
   uri_clear(object);
@@ -104,15 +94,67 @@ int uri_realloc(uri_t* object, char* uri, int uri_length)
   return uri_cannonicalize(object, (mode.flag & URI_MODE_CANNONICAL) ? URI_CANNONICALIZE_TRANSFORM : URI_CANNONICALIZE_TEST);
 }
 
-char* uri_robots(uri_t* object)
+void uri_free(uri_t* object)
 {
-  if((object->info & URI_INFO_ROBOTS) == 0) {
-    uri_string(object, &object->robots, &object->robots_size, URI_STRING_ROBOTS_STYLE);
-    object->info |= URI_INFO_ROBOTS;
-  }
-  return object->robots;
+  if(object->uri) free(object->uri);
+  if(object->furi) free(object->furi);
+  if(object->robots) free(object->robots);
+  free(object->pool);
+  free(object);
 }
 
+/*
+ * Object manipulation routines
+ */
+
+void uri_clear(uri_t* object)
+{
+  object->scheme = 0;
+  object->host = 0;
+  object->port = 0;
+  object->path = 0;
+  object->params = 0;
+  object->query = 0;
+  object->frag = 0;
+  object->user = 0;
+  object->passwd = 0;
+  object->info = 0;
+}
+
+void uri_copy(uri_t* to, uri_t* from)
+{
+  if(to->pool_size < from->pool_size) {
+    to->pool = (char*)srealloc(to->pool, from->pool_size);
+    to->pool_size = from->pool_size;
+  }
+
+  {
+    int length;
+    char* p = to->pool;
+#define reloc(w) if(from->w) { length = strlen(from->w); memcpy(p, from->w, length + 1); p += length; } else { to->w = 0; }
+    reloc(scheme);
+    reloc(host);
+    reloc(port);
+    reloc(path);
+    reloc(params);
+    reloc(query);
+    reloc(frag);
+    reloc(user);
+    reloc(passwd);
+  }
+  to->info = from->info;
+  if(to->uri) {
+    if(to->uri_size < from->uri_size) {
+      to->uri = (char*)srealloc(to->uri, from->uri_size);
+      to->uri_size = from->uri_size;
+    }
+    strcpy(to->uri, from->uri);
+  }
+}
+
+/*
+ * Convert structure into string.
+ */
 char* uri_uri(uri_t* object)
 {
   if((object->info & URI_INFO_URI) == 0) {
@@ -157,6 +199,21 @@ char* uri_furi_string(char* uri, int uri_length, int flag)
   return path;
 }
 
+/*
+ * Access structure fields
+ */
+int uri_info(uri_t* object) { return object->info; }
+#define D(n) char* uri_##n(uri_t* object) { return object->n; }
+D(scheme)
+D(host)
+     /* D(port) */
+D(path)
+D(params)
+D(query)
+D(frag)
+D(user)
+D(passwd)
+     
 char* uri_netloc(uri_t* object)
 {
   static char* netloc = 0;
@@ -219,15 +276,6 @@ char* uri_all_path(uri_t* object)
   return path;
 }
 
-void uri_free(uri_t* object)
-{
-  if(object->uri) free(object->uri);
-  if(object->furi) free(object->furi);
-  if(object->robots) free(object->robots);
-  free(object->pool);
-  free(object);
-}
-
 char* uri_port(uri_t* object)
 {
   if(object->port) return object->port;
@@ -235,151 +283,11 @@ char* uri_port(uri_t* object)
   return "";
 }
 
-#define MAX_URI_SIZE 512
-
 /*
- * rfc1808 describes relative URIs.
- * Some modifications have been done to accomodate effective net usage:
- * . http:/french/index.html is a relative URI (rfc1808 says it is an absolute)
- *   provided that the scheme is the same as the scheme of the base uri.
+ * URL cannonicalization generic machanism. Referch to the actual definition
+ * of the 'specs' table in each uri_scheme_???.c file for a definition
+ * of the allowed character set.
  */
-
-static uri_t* _relative = 0;
-
-uri_t* uri_abs(uri_t* base, char* relative_string, int relative_length)
-{
-  if(_relative == 0) {
-#define DUMMY "http://www.dummy.org/dir/file"
-    _relative = uri_alloc(DUMMY, strlen(DUMMY));
-#undef DUMMY
-  }
-  if(uri_realloc(_relative, relative_string, relative_length) != URI_CANNONICAL)
-    return 0;
-
-  return uri_abs_1(base, _relative);
-}
-
-static uri_t* absolute = 0;
-
-uri_t* uri_abs_1(uri_t* base, uri_t* relative)
-{
-  static char* path = 0;
-  static int path_size = 0;
-
-  int no_relative_path = 0;
-
-  if(relative->info & URI_INFO_EMPTY)
-    return base;
-  if(!(relative->info & URI_INFO_RELATIVE))
-    return relative;
-
-  if(absolute == 0) {
-#define DUMMY "http://www.dummy.org/dir/file"
-    absolute = uri_alloc(DUMMY, strlen(DUMMY));
-#undef DUMMY
-  }
-
-  if(absolute->pool_size < base->pool_size + relative->pool_size) {
-    absolute->pool_size = base->pool_size + relative->pool_size;
-    absolute->pool = (char*)srealloc(absolute->pool, absolute->pool_size);
-  }
-  uri_clear(absolute);
-
-  /*
-   * Build the new absolute path by merging relative and base.
-   */
-  {
-    static_alloc(&path, &path_size,
-		 (relative->path ? strlen(relative->path) : 0) +
-		 (base->path ? strlen(base->path) : 0) + 1);
-    path[0] = '\0';
-
-    /* 
-     * Move the base path to path, striping the last file name.
-     */
-    {
-      char* last_slash;
-      if(base->path && (last_slash = strrchr(base->path, '/'))) {
-	/* + 1 means that we want to keep the trailing / */
-	int length = last_slash - base->path + 1;
-	memcpy(path, base->path, length);
-	path[length] = '\0';
-      }
-    }
-    
-    /*
-     * If the relative uri path is null or empty, keep the base path if any
-     */
-    if(relative->path == 0 ||
-       relative->path[0] == '\0') {
-      if(base->path) strcpy(path, base->path);
-      no_relative_path = 1;
-    /*
-     * If the relative uri path is absolute, override base
-     */
-    } else if(!(relative->info & URI_INFO_RELATIVE_PATH)) {
-      strcpy(path, relative->path);
-      minimal_path(path, -1);
-    /*
-     * If the relative uri path is relative, append to dirname of base path
-     * and reduce . and ..
-     */
-    } else {
-      strcat(path, relative->path);
-      minimal_path(path, -1);
-    }
-  }
-
-  /*
-   * Recombine components from base and relative into absolute
-   */
-  {
-    char* tmp;
-    char* p = absolute->pool;
-    int length;
-#define merge(w) \
-    if(tmp) { \
-      strcpy(p, tmp); \
-      absolute->w = p; \
-      p += strlen(tmp) + 1; \
-    } 
-    tmp = base->scheme ? base->scheme : relative->scheme;
-    merge(scheme);
-    tmp = base->host;
-    merge(host);
-    tmp = base->port;
-    merge(port);
-    tmp = path;
-    if(path[0] != '\0') {
-      merge(path);
-    } else {
-      absolute->path = p;
-      *p++ = '\0';
-    }
-    if(no_relative_path) {
-      tmp = relative->params ? relative->params : base->params;
-      merge(params);
-      tmp = relative->query ? relative->query : base->query;
-      merge(query);
-      tmp = relative->frag ? relative->frag : base->frag;
-      merge(frag);
-    } else {
-      tmp = relative->params;
-      merge(params);
-      tmp = relative->query;
-      merge(query);
-      tmp = relative->frag;
-      merge(frag);
-    }
-    tmp = relative->user ? relative->user : base->user;
-    merge(user);
-    tmp = relative->passwd ? relative->passwd : base->passwd;
-    merge(passwd);
-  }
-#undef merge
-  absolute->info = URI_INFO_CANNONICAL;
-  return absolute;
-}
 
 static char hex2char[128] = {
 /*  00 nul  01 soh   02 stx  03 etx   04 eot  05 enq   06 ack  07 bel   */
@@ -472,37 +380,9 @@ char* uri_cannonicalize_string(char* uri, int uri_length, int flag)
   return object->uri;
 }
 
-void uri_copy(uri_t* to, uri_t* from)
-{
-  if(to->pool_size < from->pool_size) {
-    to->pool = (char*)srealloc(to->pool, from->pool_size);
-    to->pool_size = from->pool_size;
-  }
-
-  {
-    int length;
-    char* p = to->pool;
-#define reloc(w) if(from->w) { length = strlen(from->w); memcpy(p, from->w, length + 1); p += length; } else { to->w = 0; }
-    reloc(scheme);
-    reloc(host);
-    reloc(port);
-    reloc(path);
-    reloc(params);
-    reloc(query);
-    reloc(frag);
-    reloc(user);
-    reloc(passwd);
-  }
-  to->info = from->info;
-  if(to->uri) {
-    if(to->uri_size < from->uri_size) {
-      to->uri = (char*)srealloc(to->uri, from->uri_size);
-      to->uri_size = from->uri_size;
-    }
-    strcpy(to->uri, from->uri);
-  }
-}
-
+/*
+ * Show structure
+ */
 void uri_dump(uri_t* object)
 {
   printf("flags: ");
@@ -514,6 +394,7 @@ void uri_dump(uri_t* object)
   flag(URI_INFO_RELATIVE);
   flag(URI_INFO_RELATIVE_PATH);
   flag(URI_INFO_EMPTY);
+  flag(URI_INFO_PARSED);
 #undef flag
   printf("\n");
 

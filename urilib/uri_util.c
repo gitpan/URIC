@@ -26,7 +26,7 @@
 char* uri_errstr = 0;
 static int uri_errstr_size = 0;
 
-#if STDC_HEADERS
+#if HAVE_STDARG_H
 void uri_error(int size_hint, char* fmt, ...)
 #else
 void uri_error(int size_hint, char* fmt, va_alist)
@@ -34,7 +34,7 @@ void uri_error(int size_hint, char* fmt, va_alist)
 {
   va_list ap;
 
-#if STDC_HEADERS
+#if HAVE_STDARG_H
   va_start(ap, fmt);
 #else
   va_start(ap);

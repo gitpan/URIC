@@ -19,7 +19,7 @@
 CC = @CC@
 LDFLAGS = @LDFLAGS@
 LDLIBS =  @LIBS@ -L. -luri
-CFLAGS = -I. @DEFS@ @CPPFLAGS@ @CFLAGS@
+CFLAGS = -I. @PIC_CFLAGS@ @DEFS@ @CPPFLAGS@ @CFLAGS@
 prefix=	@prefix@
 exec_prefix=@exec_prefix@
 BINDIR = @bindir@
@@ -58,7 +58,7 @@ clean:
 
 realclean: clean
 	rm -f Makefile config.cache config.h config.log config.status *~ core
-	rm -f .pure *pure* t/*~
+	rm -f .pure *pure* t/*~ uri_test
 
 t_uri: $(LIB)
 

@@ -81,14 +81,13 @@ int uri_modep(int flag);
  */
 #define URI_INFO_PARSED		0x0040
 /*
- * Set if the scheme is FILE.
- */
-#define URI_INFO_FILE		0x0200
-/*
  * Set if the URI is a robots.txt URI
  */
 #define URI_INFO_ROBOTS		0x0400
 
+/*
+ * Actual definition in uri_schemes.h
+ */
 struct uri_scheme_desc;
 
 /*
@@ -130,15 +129,18 @@ int uri_realloc(uri_t* object, char* uri, int uri_length);
 void uri_free(uri_t* object);
 
 /*
- * Transform relative URI in absolute URI according to base.
- */
-uri_t* uri_abs(uri_t* base, char* relative_string, int relative_length);
-uri_t* uri_abs_1(uri_t* base, uri_t* relative);
-
-/*
  * Access structure fields
  */
+int uri_info(uri_t* object);
+char* uri_scheme(uri_t* object);
+char* uri_host(uri_t* object);
 char* uri_port(uri_t* object);
+char* uri_path(uri_t* object);
+char* uri_params(uri_t* object);
+char* uri_query(uri_t* object);
+char* uri_frag(uri_t* object);
+char* uri_user(uri_t* object);
+char* uri_passwd(uri_t* object);
 char* uri_netloc(uri_t* object);
 char* uri_auth(uri_t* object);
 char* uri_all_path(uri_t* object);
@@ -147,6 +149,10 @@ char* uri_all_path(uri_t* object);
  * Copy uri_t objects
  */
 void uri_copy(uri_t* to, uri_t* from);
+/*
+ * Clear all fields, does not deallocate
+ */
+void uri_clear(uri_t* object);
 /*
  * Show fields on stderr.
  */
@@ -163,10 +169,6 @@ char* uri_furi(uri_t* object);
  * URI string
  */
 char* uri_uri(uri_t* object);
-/*
- * robots.txt URI corresponding to this URI.
- */
-char* uri_robots(uri_t* object);
 
 /*
  * Convinience functions
@@ -253,5 +255,29 @@ int uri_cannonicalize(uri_t* object, int flag);
  * Parse string pointed by pool and fill fields.
  */
 int uri_parse(uri_t* object);
+
+/*
+ * The following functions are not available for all scheme. Their
+ * implementation may be found in the corresponding uri_scheme_???.c file.
+ */
+
+/*
+ * GENERIC specific
+ */
+
+/*
+ * Transform relative URI in absolute URI according to base.
+ */
+uri_t* uri_abs(uri_t* base, char* relative_string, int relative_length);
+uri_t* uri_abs_1(uri_t* base, uri_t* relative);
+
+/*
+ * HTTP specific
+ */
+
+/*
+ * robots.txt URI corresponding to this URI.
+ */
+char* uri_robots(uri_t* object);
 
 #endif /* _uri_h */
