@@ -1,0 +1,78 @@
+#
+#   Copyright (C) 1997, 1998
+#   	Free Software Foundation, Inc.
+#
+#   This program is free software; you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the
+#   Free Software Foundation; either version 2, or (at your option) any
+#   later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
+#
+CC = @CC@
+LDFLAGS = @LDFLAGS@
+LDLIBS =  @LIBS@ -L. -luri
+CFLAGS = -I. @DEFS@ @CPPFLAGS@ @CFLAGS@
+prefix=	@prefix@
+exec_prefix=@exec_prefix@
+BINDIR = @bindir@
+LIBDIR = @libdir@
+INCLUDEDIR = @includedir@
+MANDIR = @mandir@
+
+include uri_schemes.mk
+
+LIB_OBJ = \
+	liburi.a(uri.o) \
+	liburi.a(uri_schemes.o) \
+	liburi.a(uri_util.o) \
+	liburi.a(uri_scheme_generic.o) \
+	liburi.a(mpath.o) \
+	liburi.a(strlower.o) \
+	liburi.a(salloc.o) \
+	liburi.a(split.o) \
+	$(URI_SCHEMES)
+
+LIB = liburi.a
+
+all: $(LIB)
+
+install: all
+	if [ ! -d $(LIBDIR) ] ; then mkdir -p $(LIBDIR) ; fi
+	if [ ! -d $(INCLUDEDIR) ] ; then mkdir -p $(INCLUDEDIR) ; fi
+	if [ ! -d $(BINDIR) ] ; then mkdir -p $(BINDIR) ; fi
+	if [ ! -d $(MANDIR)/man3 ] ; then mkdir -p $(MANDIR)/man3 ; fi
+	cp -p $(LIB) $(LIBDIR)
+	cp -p uri.h $(INCLUDEDIR)
+	cp -p uri.3 $(MANDIR)/man3/
+
+clean:
+	rm -f $(LIB) *.o t/*.out t_uri gen_schemes
+
+realclean: clean
+	rm -f Makefile config.cache config.h config.log config.status *~ core
+	rm -f .pure *pure* t/*~
+
+t_uri: $(LIB)
+
+test: t_uri
+	#
+	# If tests not successfull some diff output will show
+	#
+	uri_test
+
+uri_schemes_hash.c: SCHEMES
+	gperf -k2-4 -c -G -W uri_scheme_list -H uri_scheme_hash -N uri_scheme_exists < SCHEMES > uri_schemes_hash.c
+	gen_schemes `ls uri_scheme_*.c | sed -e 's/uri_scheme_\(.*\).c/\1/'`
+
+$(LIB): $(LIB_OBJ)
+
+.PHONY: test
+

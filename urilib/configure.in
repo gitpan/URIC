@@ -1,0 +1,15 @@
+AC_INIT(uri.c)
+
+AC_CONFIG_HEADER(config.h)
+AC_PROG_CC
+
+AC_HEADER_STDC
+
+AC_CHECK_HEADERS(stdlib.h string.h ctype.h)
+AC_CHECK_FUNCS(strchr memcpy strstr strcmp strncmp strncpy)
+AC_CHECK_FUNCS(vsprintf)
+
+VERSION=2.00
+AC_SUBST(VERSION)
+
+AC_OUTPUT(Makefile)

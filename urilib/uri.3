@@ -1,0 +1,367 @@
+'''
+'''   Copyright (C) 1997, 1998
+'''   	Free Software Foundation, Inc.
+'''
+'''   This program is free software; you can redistribute it and/or modify it
+'''   under the terms of the GNU General Public License as published by the
+'''   Free Software Foundation; either version 2, or (at your option) any
+'''   later version.
+'''
+'''   This program is distributed in the hope that it will be useful,
+'''   but WITHOUT ANY WARRANTY; without even the implied warranty of
+'''   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+'''   GNU General Public License for more details.
+'''
+'''   You should have received a copy of the GNU General Public License
+'''   along with this program; if not, write to the Free Software
+'''   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+'''
+'''
+''' $Header$
+'''
+'''
+''' Copyright 1995, 1996, 1997, 1998 Civil Engineering in Cyberspace
+'''
+.TH uri 3 local
+.SH NAME
+uri \-
+a set of functions to manipulate URIs
+
+.SH DESCRIPTION
+The header file for the library is
+.B #include <uri.h>
+and the library may be linked using
+.B -luri.
+.PP
+.B uri
+is a library that analyses URIs and transform them. It is designed to
+be fast and occupy as few memory as possible. The basic usage of this
+library is to transform an URI into a structure with one field for each
+component of the URI and vice versa.
+
+.SH FURI
+It is sometimes convinient to convert an URI into a path name. Some
+functions of the
+.B uri
+library provide such a conversion (uri_furi for instance). These path names
+are called FURI (File equivalent of an URI) for short. Here is a description
+of the transformation.
+.nf
+.ft CW
+ http://www.ina.fr:700/imagina/index.html#queau
+   |    \\____________/ \\________________/\\____/
+   |          |              |               lost
+   |          |              |
+   |          |              |
+  /           |              |
+  |           |              |
+  |           |              |
+  |           |              |
+ /            |              |
+ |   /^^^^^^^^^^^^^\\/^^^^^^^^^^^^^^^^\\
+http/www.ina.fr:700/imagina/index.html
+.ft R
+.fi
+
+.SH STRUCTURE
+The
+.B uri_t
+type is a structure describing the URI. The fields may be adressed directly.
+However a few access functions implement some usefull transformations and
+may be used (see
+.B uri_port
+or
+.B uri_netloc
+below for instance). All the fields are character strings whose size is
+exactly the size of the string they contain. One can safely override the
+values contained in the fields, as long as the replacement string has a 
+size lower or equal to the original size. If the replacement string is
+larger, one can safely set the pointer of a field to some arbitrary string.
+This operation will not lose any previously allocated space.
+
+.TP
+.B info
+A bit field carrying information about the URI. Each bit has a corresponding
+define that have the following meaning.
+
+.PP
+.B URI_INFO_CANNONICAL
+Set if the URI is in cannonical form.
+
+.PP
+.B URI_INFO_RELATIVE
+Set if the URI is a relative URI (does not start with {http,..}://).
+
+.PP
+.B  URI_INFO_RELATIVE_PATH
+Set if the URI is a relative URI and the path does not start with a /.
+
+.PP
+.B URI_INFO_EMPTY
+Set if the URI is the empty string.
+
+.PP
+.B URI_INFO_HTTP
+Set if the URI scheme is http.
+
+.PP
+.B URI_INFO_FTP
+Set if the URI scheme is ftp.
+
+.PP
+.B URI_INFO_NEWS
+Set if the URI scheme is news.
+
+.PP
+.B URI_INFO_FILE
+Set if the URI scheme is file.
+
+.PP
+.B URI_INFO_ROBOTS
+Set if the URI is an http robots.txt file.
+
+.TP
+.B scheme
+The scheme of the URI (http, ftp, file or news).
+
+.TP
+.B host
+The host name part of the URI.
+
+.TP
+.B port
+The port number associated to host, if any.
+
+.TP
+.B path
+The path name of the URI.
+
+.TP
+.B params
+The parameters of the URI (i.e. what is found after the ; in the path).
+
+.TP
+.B query
+The query part of a cgi-bin call (i.e. what is found after the ? in the path).
+
+.TP
+.B frag
+The fragement of the document (i.e. what is found after the # in the path).
+
+.TP
+.B user
+If authentication information is set, the user name.
+
+.TP
+.B passwd
+If authentication information is set, the password.
+
+.SH FUNCTIONS
+.TP
+.B uri_t* uri_alloc(char* uri, int uri_length)
+The
+.B uri
+is splitted into fields and the corresponding
+.B uri_t
+structure is returned. The structure is allocated using
+.B malloc.
+The URI is put in cannonical form. If it cannot be put in cannonical
+form an error message is printed on stderr and a null pointer is
+returned.
+
+.TP 
+.B uri_t* uri2object(char* uri, int uri_length)
+The
+.B uri
+is splitted into fields and the corresponding
+.B uri_t
+structure is returned.
+The returned structure is statically allocated and must not be freed.
+The URI is put in cannonical form. If it cannot be put in cannonical
+form an error message is printed on stderr and a null pointer is
+returned.
+
+.TP
+.B int uri_realloc(uri_t* object, char* uri, int uri_length)
+The
+.B uri
+is splitted into fields in the previously allocated
+.B object
+structure. The URI is put in cannonical form and
+.B URI_CANNONICAL.
+If it cannot be put
+in cannonical form, nothing is done and
+.B URI_NOT_CANNONICAL
+is returned.
+
+.TP
+.B void uri_free(uri_t* object)
+The
+.B object
+previously allocated by
+.B uri_alloc
+is deallocated.
+
+.TP
+.B uri_t* uri_abs(uri_t* base, char* relative_string, int relative_length)
+Transform the relative URI
+.B relative_string
+into an absolute URI using
+.B base
+as the base URI. The returned
+.B uri_t
+object is allocated statically and must not be freed.
+
+.TP
+.B uri_abs_1(uri_t* base, uri_t* relative)
+Transform the relative URI
+.B relative
+into an absolute URI using
+.B base
+as the base URI. The returned
+.B uri_t
+object is allocated statically and must not be freed.
+
+.TP
+.B char* uri_port(uri_t* object)
+returns the value of the
+.B port
+field of the
+.B object.
+If the
+.B port
+field is empty, returns the default port for the corresponding scheme.
+For instance, if the scheme is
+.B http
+the
+.B "80"
+string is returned.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_netloc(uri_t* object)
+returns a concatenation of the
+.B host
+and
+.B port
+field, separated by a
+.B :.
+If the
+.B host
+field is not set, the null pointer is returned and a message
+is printed on stderr.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_auth(uri_t* object)
+returns a concatenation of the
+.B user
+and
+.B passwd
+field, separated by a
+.B :
+or an empty string if any of them is not set.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_all_path(uri_t* object)
+returns a concatenation of the
+.B path, params
+and
+.B query
+fields in the form
+.B path;params?query.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_furi(uri_t* object)
+returns a string containing the FURI (File equivalent of an URI) built
+from 
+.B object.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_uri(uri_t* object)
+returns a string containing the URI built
+from 
+.B object.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_robots(uri_t* object)
+returns a string containing the URI of the robots.txt file corresponding
+to the URI contained in object. For instance, if the URI contained in 
+object is 
+.B http://www.foo.com/dir/dir/file.html
+the returned string will be
+.B http://www.foo.com/robots.txt.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_cannonicalize_string(char* uri, int uri_length, int flag)
+returns the cannonical form of the
+.B uri
+given in argument. The cannonical form is formatted according to the 
+value of 
+.B flag.
+Values of flag are bits that can be ored together.
+
+.B URI_STRING_FURI_STYLE
+return a FURI, 
+.B URI_STRING_URI_STYLE
+return an URI,
+.B URI_STRING_ROBOTS_STYLE
+return the corresponding robots.txt URI,
+.B URI_STRING_URI_NOHASH_STYLE
+do not include the frag in the returned string.
+
+.SH CANNONICAL FORM
+The cannonical form of an URI is an arbitrary choice to code all the
+possible variations of the same URI in one string. For instance
+http://www.foo.com/abc"def.html will be transformed to 
+http://www.foo.com/abc%22def.html. Most of the transformations follow
+the instructions found in
+.B rfc1738
+but some of them don't. 
+.PP
+Additionally, when the path of the URI contains dots and double dots, it
+is reduced. For instance
+.B http://www.foo.com/dir/.././file.html
+will be transformed to
+.B http://www.foo.com/file.html.
+
+.SH EXAMPLES
+.PP
+.B Show cannonical form of URI
+.nf
+.ft CW
+char* uri = "http://www.foo.com/";
+uri = uri_cannonicalize_string(uri, strlen(uri), URI_STRING_URI_STYLE);
+if(uri) printf("uri = %s\n", uri);
+.ft R
+.fi
+.PP
+.B Show the host and port of URI (netloc)
+.nf
+.ft CW
+char* uri = "http://www.foo.com:7000/";
+uri_t* uri_object = uri_object(uri, strlen(uri));
+if(uri_object) printf("netloc = %s\n", uri_netloc(uri_object));
+.ft R
+.fi
+.PP
+.B Change the query part of URI and show it
+.nf
+.ft CW
+char* uri = "http://www.foo.com/cgi-bin/bar?param=1";
+uri_t* uri_object = uri_object(uri, strlen(uri));
+if(uri_object) {
+	uri_object->query = "param=2";
+	printf("uri = %s\n", uri_uri(uri_object));
+}
+.ft R
+.fi
+.SH AUTHOR
+Loic Dachary loic@ceic.com Civil Engineering in Cyberspace
+.SH SEE ALSO
+rfc1738
