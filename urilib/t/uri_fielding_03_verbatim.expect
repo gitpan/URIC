@@ -1,7 +1,23 @@
+# 
+# Auto cannonical is off
+# 
 #
-# g:h          	http://a/b/c/d;p?q
+# Examples from draft-fielding-uri-syntax-03
 #
-uri: unknown scheme g found in url g:h
+# Normal examples (C.1)
+#
+# Expect ftp:h
+#
+#
+# ftp:h          	http://a/b/c/d;p?q
+#
+uri: ftp:h
+furi: ftp:h
+uri base: http://a/b/c/d;p?q
+uri absolute: ftp:h
+#
+# Expect http://a/b/c/g
+#
 #
 # g            	http://a/b/c/d;p?q
 #
@@ -10,12 +26,18 @@ furi: g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g
 #
+# Expect http://a/b/c/g
+#
+#
 # ./g          	http://a/b/c/d;p?q
 #
 uri: ./g
 furi: ./g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g
+#
+# Expect http://a/b/c/g/
+#
 #
 # g/           	http://a/b/c/d;p?q
 #
@@ -24,6 +46,9 @@ furi: g/
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g/
 #
+# Expect http://a/g
+#
+#
 # /g           	http://a/b/c/d;p?q
 #
 uri: /g
@@ -31,12 +56,19 @@ furi: /g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/g
 #
+# Expect http://g
+#
+#
 # //g          	http://a/b/c/d;p?q
 #
-uri: /g
-furi: /g
+uri: //g/
+furi: /g/
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/g
+uri absolute: http://g/
+#
+# Expect http://a/b/c/?y (our implementation chose to replace the query
+# instead of overriding the whole path)
+#
 #
 # ?y           	http://a/b/c/d;p?q
 #
@@ -45,12 +77,18 @@ furi: ?y
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/d;p?y
 #
+# Expect http://a/b/c/g?y
+#
+#
 # g?y          	http://a/b/c/d;p?q
 #
 uri: g?y
 furi: g?y
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g?y
+#
+# Expect (current document)#s
+#
 #
 # #s           	http://a/b/c/d;p?q
 #
@@ -59,12 +97,18 @@ furi:
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/d;p?q#s
 #
+# Expect http://a/b/c/g#s
+#
+#
 # g#s          	http://a/b/c/d;p?q
 #
 uri: g#s
 furi: g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g#s
+#
+# Expect http://a/b/c/g?y#s
+#
 #
 # g?y#s        	http://a/b/c/d;p?q
 #
@@ -73,12 +117,19 @@ furi: g?y
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g?y#s
 #
+# Expect http://a/b/c/;x (our implementation chose to replace the param
+# instead of overriding the whole path)
+#
+#
 # ;x           	http://a/b/c/d;p?q
 #
 uri: ;x
 furi: ;x
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/d;x?q
+uri absolute: http://a/b/c/d;x
+#
+# Expect http://a/b/c/g;x
+#
 #
 # g;x          	http://a/b/c/d;p?q
 #
@@ -87,12 +138,18 @@ furi: g;x
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g;x
 #
+# Expect http://a/b/c/g;x?y#s
+#
+#
 # g;x?y#s      	http://a/b/c/d;p?q
 #
 uri: g;x?y#s
 furi: g;x?y
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g;x?y#s
+#
+# Expect http://a/b/c/
+#
 #
 # .            	http://a/b/c/d;p?q
 #
@@ -101,12 +158,18 @@ furi: .
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/
 #
+# Expect http://a/b/c/
+#
+#
 # ./           	http://a/b/c/d;p?q
 #
 uri: ./
 furi: ./
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/
+#
+# Expect http://a/b/
+#
 #
 # ..           	http://a/b/c/d;p?q
 #
@@ -115,12 +178,18 @@ furi: ..
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/
 #
+# Expect http://a/b/
+#
+#
 # ../          	http://a/b/c/d;p?q
 #
 uri: ../
 furi: ../
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/
+#
+# Expect http://a/b/g
+#
 #
 # ../g         	http://a/b/c/d;p?q
 #
@@ -129,12 +198,18 @@ furi: ../g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/g
 #
+# Expect http://a/
+#
+#
 # ../..        	http://a/b/c/d;p?q
 #
 uri: ../..
 furi: ../..
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/
+#
+# Expect http://a/
+#
 #
 # ../../       	http://a/b/c/d;p?q
 #
@@ -143,6 +218,9 @@ furi: ../../
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/
 #
+# Expect http://a/g
+#
+#
 # ../../g      	http://a/b/c/d;p?q
 #
 uri: ../../g
@@ -150,10 +228,19 @@ furi: ../../g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/g
 #
+# Expect http://a/b/c/d;p?q
+#
+#
 # 	http://a/b/c/d;p?q
 #
 uri: http://a/b/c/d;p?q
 furi: http:/a/b/c/d;p?q
+#
+# Abnormal examples (C.2)
+#
+#
+# Expect http://a/../g or http://a/g (both acceptable)
+#
 #
 # ../../../g   	http://a/b/c/d;p?q
 #
@@ -162,10 +249,19 @@ furi: ../../../g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/g
 #
-# ../../../../g	http://a/b/c/d;p?q
+# Expect http://a/../../g or http://a/g (both acceptable)
 #
-uri: ../../../../g%09http%3A//a/b/c/d;p?q
-furi: ../../../../g%09http%3A//a/b/c/d;p?q
+#
+# ../../../../g 	http://a/b/c/d;p?q
+#
+uri: ../../../../g
+furi: ../../../../g
+uri base: http://a/b/c/d;p?q
+uri absolute: http://a/g
+#
+# Expect http://a/./g (our implementation chose to reduce this path too
+# because all unices and windows based server behave this way)
+#
 #
 # /./g         	http://a/b/c/d;p?q
 #
@@ -174,12 +270,19 @@ furi: /./g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/g
 #
+# Expect http://a/../g (our implementation chose to reduce this path too
+# because all unices and windows based server behave this way)
+#
+#
 # /../g        	http://a/b/c/d;p?q
 #
 uri: /../g
 furi: /../g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/g
+#
+# Expect http://a/b/c/g.
+#
 #
 # g.           	http://a/b/c/d;p?q
 #
@@ -188,12 +291,18 @@ furi: g.
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g.
 #
+# Expect http://a/b/c/.g
+#
+#
 # .g           	http://a/b/c/d;p?q
 #
 uri: .g
 furi: .g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/.g
+#
+# Expect http://a/b/c/g..
+#
 #
 # g..          	http://a/b/c/d;p?q
 #
@@ -202,12 +311,18 @@ furi: g..
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g..
 #
+# Expect http://a/b/c/..g
+#
+#
 # ..g          	http://a/b/c/d;p?q
 #
 uri: ..g
 furi: ..g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/..g
+#
+# Expect http://a/b/g
+#
 #
 # ./../g       	http://a/b/c/d;p?q
 #
@@ -216,12 +331,18 @@ furi: ./../g
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/g
 #
+# Expect http://a/b/c/g/
+#
+#
 # ./g/.        	http://a/b/c/d;p?q
 #
 uri: ./g/.
 furi: ./g/.
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g/
+#
+# Expect http://a/b/c/g/h
+#
 #
 # g/./h        	http://a/b/c/d;p?q
 #
@@ -230,6 +351,9 @@ furi: g/./h
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/g/h
 #
+# Expect http://a/b/c/h
+#
+#
 # g/../h       	http://a/b/c/d;p?q
 #
 uri: g/../h
@@ -237,44 +361,65 @@ furi: g/../h
 uri base: http://a/b/c/d;p?q
 uri absolute: http://a/b/c/h
 #
+# Expect http://a/b/c/g;x=1/y (i don't understand that, whatever is in
+# params or query must not be interpreted. /./ or ../ may be meaningfull
+# for the server handling the request. This is not a 'path' component, is
+# it ?)
+#
+#
 # g;x=1/./y    	http://a/b/c/d;p?q
 #
-uri: g;x%3D1%2F.%2Fy
-furi: g;x%3D1%2F.%2Fy
+uri: g;x=1/./y
+furi: g;x=1/./y
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/g;x%3D1%2F.%2Fy
+uri absolute: http://a/b/c/g;x=1/./y
+#
+# Expect http://a/b/c/y (same as above)
+#
 #
 # g;x=1/../y   	http://a/b/c/d;p?q
 #
-uri: g;x%3D1%2F..%2Fy
-furi: g;x%3D1%2F..%2Fy
+uri: g;x=1/../y
+furi: g;x=1/../y
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/g;x%3D1%2F..%2Fy
+uri absolute: http://a/b/c/g;x=1/../y
+#
+# Expect http://a/b/c/g?y/./x
+#
 #
 # g?y/./x      	http://a/b/c/d;p?q
 #
-uri: g?y%2F.%2Fx
-furi: g?y%2F.%2Fx
+uri: g?y/./x
+furi: g?y/./x
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/g?y%2F.%2Fx
+uri absolute: http://a/b/c/g?y/./x
+#
+# Expect http://a/b/c/g?y/../x
+#
 #
 # g?y/../x     	http://a/b/c/d;p?q
 #
-uri: g?y%2F..%2Fx
-furi: g?y%2F..%2Fx
+uri: g?y/../x
+furi: g?y/../x
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/g?y%2F..%2Fx
+uri absolute: http://a/b/c/g?y/../x
+#
+# Expect http://a/b/c/g#s/./x
+#
 #
 # g#s/./x      	http://a/b/c/d;p?q
 #
-uri: g#s%2F.%2Fx
+uri: g#s/./x
 furi: g
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/g#s%2F.%2Fx
+uri absolute: http://a/b/c/g#s/./x
+#
+# Expect http://a/b/c/g#s/../x
+#
 #
 # g#s/../x     	http://a/b/c/d;p?q
 #
-uri: g#s%2F..%2Fx
+uri: g#s/../x
 furi: g
 uri base: http://a/b/c/d;p?q
-uri absolute: http://a/b/c/g#s%2F..%2Fx
+uri absolute: http://a/b/c/g#s/../x

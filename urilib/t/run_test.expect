@@ -1,0 +1,58 @@
+uri = http://www.ceic.com/
+	host = www.ceic.com
+	path = 
+	query = 
+uri = http://www.cei%43.com/
+	host = www.ceic.com
+	path = 
+	query = 
+uri = http://www.ceic.com/a/b/
+	host = www.ceic.com
+	path = a/b/
+	query = 
+uri = http://www.ceic.com/a%2f/a&/
+	host = www.ceic.com
+	path = a%2F/a%26/
+	query = 
+uri = http://www.ceic.com/a?foo=1&bar=2
+	host = www.ceic.com
+	path = a
+	query = foo=1&bar=2
+uri = http://www.ceic.com/a?foo=1&bar=%26&foobar=3
+	host = www.ceic.com
+	path = a
+	query = foo=1&bar=%26&foobar=3
+uri_unescape path http://www.ceic.com/foo%7e/a%/b = http://www.ceic.com/foo~/a%/b
+uri_escape path http://www.ceic.com/foo%7e/a%/b = http://www.ceic.com/foo~/a%25/b
+uri scheme change (file -> http) http:/a/b/c.html 
+uri change file://web/orig/path -> http://web/1info?key%20words#this 
+gopher_type  gopher://gopher:33/45%09a -> 4 
+uri = http://www.ceic.com/
+	host = www.ceic.com
+	path = 
+	query = 
+uri = http://www.cei%43.com/
+	host = www.ceic.com
+	path = 
+	query = 
+uri = http://www.ceic.com/a/b/
+	host = www.ceic.com
+	path = a/b/
+	query = 
+uri = http://www.ceic.com/a%2f/a&/
+	host = www.ceic.com
+	path = a%2F/a%26/
+	query = 
+uri = http://www.ceic.com/a?foo=1&bar=2
+	host = www.ceic.com
+	path = a
+	query = foo=1&bar=2
+uri = http://www.ceic.com/a?foo=1&bar=%26&foobar=3
+	host = www.ceic.com
+	path = a
+	query = foo=1&bar=%26&foobar=3
+uri_unescape path http://www.ceic.com/foo%7e/a%/b = http://www.ceic.com/foo~/a%/b
+uri_escape path http://www.ceic.com/foo%7e/a%/b = http://www.ceic.com/foo~/a%25/b
+uri scheme change (file -> http) http:/a/b/c.html 
+uri change file://web/orig/path -> http://web/1info?key%20words#this 
+gopher_type  gopher://gopher:33/45%09a -> 4 

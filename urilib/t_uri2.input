@@ -3,9 +3,9 @@
 #
 # Normal examples (C.1)
 #
-# Expect g:h
+# Expect ftp:h
 #
-g:h          	http://a/b/c/d;p?q
+ftp:h          	http://a/b/c/d;p?q
 #
 # Expect http://a/b/c/g
 #
@@ -23,7 +23,7 @@ g/           	http://a/b/c/d;p?q
 #
 /g           	http://a/b/c/d;p?q
 #
-# Expect http://g (bug here, our implementation does not handle this case)
+# Expect http://g
 #
 //g          	http://a/b/c/d;p?q
 #
@@ -106,7 +106,7 @@ g;x?y#s      	http://a/b/c/d;p?q
 #
 # Expect http://a/../../g or http://a/g (both acceptable)
 #
-../../../../g	http://a/b/c/d;p?q
+../../../../g 	http://a/b/c/d;p?q
 #
 # Expect http://a/./g (our implementation chose to reduce this path too
 # because all unices and windows based server behave this way)

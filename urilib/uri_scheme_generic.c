@@ -22,8 +22,11 @@
 
 #include <uri_util.h>
 #include <uri.h>
+#include <uri_private.h>
 #include <uri_schemes.h>
 #include <uri_scheme_generic.h>
+
+#include <uri_escapes_generic.h>
 
 /*
  * Does not implement the multiple port specification :80,81.
@@ -31,237 +34,24 @@
  */
 int uri_scheme_generic_parse(uri_t* object)
 {
-  char* p;
-
-  /*
-   *  This parsing code is based on
-   *   draft-ietf-uri-relative-uri-06.txt Section 2.4
-   */
-  /* 2.4.1 frag */
-  if(p = strrchr(object->pool, '#')) {
-    object->frag = p + 1;
-    *p = '\0';
-  }
-  p = object->pool;
-  /* 2.4.2 scheme */
-  {
-    char* start = p;
-    char* end;
-    while(*start && isspace(*start))
-      start++;
-    end = start;
-    while(*end && ( isalnum(*end) || *end == '+' || *end == '.' || *end == '-'))
-      end++;
-    if(*end != '\0' && end > start && *end == ':') {
-      object->scheme = start;
-      *end = '\0';
-      p = end + 1;
-    }
-  }
-  /*
-   * 2.4.3 netloc
-   * Never bother to find the netloc if there is no scheme.
-   * It may even lead to errors if done (//foo.bar/dir/file.html for instance)
-   */
-  if(object->scheme) {
-    char* start = p;
-    char* end;
-
-    if(start[0] == '/' && start[1] == '/') {
-      /*
-       * Tolerate /// 
-       */
-      while(*start && *start == '/')
-	start++;
-      end = start;
-      while(*end && *end != '/')
-	end++;
-      p = *end ? end + 1 : end;
-      *end = '\0';
-      /*
-       * Decode authentication information.
-       */
-      {
-	char* auth_end;
-	if(auth_end = strchr(start, '@')) {
-	  char* auth_start = start;
-	  *auth_end = '\0';
-	  start = auth_end + 1;
-
-	  if(object->passwd = strchr(auth_start, ':')) {
-	    *object->passwd++ = '\0';
-	  }
-	  object->user = auth_start;
-	}
-      }
-      if(end > start) {
-	char* tmp;
-	*end = '\0';
-	object->host = start;
-	if(tmp = strrchr(start, ':')) {
-	  *tmp = '\0';
-	  object->port = tmp + 1;
-	}
-      }
-    }
-  }
-
-  if(!object->scheme || !object->host) {
-    object->info |= URI_INFO_RELATIVE;
-  }
-
-  /* 2.4.4 query */
-  object->query = strchr(p, '?');
-  if(object->query) {
-    *object->query = '\0';
-    object->query++;
-  }
-  /* 2.4.5 query */
-  object->params = strchr(p, ';');
-  if(object->params) {
-    *object->params = '\0';
-    object->params++;
-  }
-  /* Multiple / in path are always mistakes */
-  {
-    char* read = p;
-    char* write = p;
-    int slash = 0;
-    if((object->info & URI_INFO_RELATIVE) &&
-       *p != '/') {
-      object->info |= URI_INFO_RELATIVE_PATH;
-    }
-    while(*read && *read == '/')
-      read++;
-    while(*read) {
-      if(slash && *read == '/') {
-	read++;
-	slash = 1;
-      } else {
-	*write++ = *read++;
-	slash = 0;
-      }
-    }
-    *write = '\0';
-  }
-  object->path = p;
-
-  if(object->scheme == 0 &&
-     object->host == 0 &&
-     object->port == 0 &&
-     object->path[0] == '\0' &&
-     object->params == 0 &&
-     object->query == 0 &&
-     object->frag == 0 &&
-     object->user == 0 &&
-     object->passwd == 0) {
-    object->info |= URI_INFO_EMPTY;
-  }
-  return 0;
+  return uri_parse_generic(object, 0);
 }
 
-
-/*
- * Refer to rfc 1738 for constraints imposed to URIs. Some
- * details are derived from actual use of URI which may differ
- * slightly from the specifications.
- */
-
-int uri_scheme_generic_specs[256] = {
-/*  00 nul  01 soh   02 stx  03 etx   04 eot  05 enq   06 ack  07 bel   */
-  0,        SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-/*  08 bs   09 ht    0a nl   0b vt    0c np   0d cr    0e so   0f si    */
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-/*  10 dle  11 dc1   12 dc2  13 dc3   14 dc4  15 nak   16 syn  17 etb   */
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-/*  18 can  19 em    1a sub  1b esc   1c fs   1d gs    1e rs   1f us    */
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-/*  20 sp   21 !     22 "    23 #     24 $    25 %     26 &    27 '     */
-  SPEC_ESC, SPEC_NOR, SPEC_ESC, SPEC_ESC,
-  SPEC_NOR,
-  SPEC_ESC,
-  SPEC_EPATH|SPEC_QUERY|SPEC_EPARAMS|SPEC_ETAG|SPEC_EAUTH,
-  SPEC_ESC,
-/*  28 (    29 )     2a *    2b +     2c ,    2d -     2e .    2f /     */
-  SPEC_NOR,
-  SPEC_NOR,
-  SPEC_NOR,
-  SPEC_SCHEME|SPEC_NETLOC|SPEC_NOR,
-  SPEC_NOR,
-  SPEC_SCHEME|SPEC_NETLOC|SPEC_NOR,
-  SPEC_SCHEME|SPEC_NETLOC|SPEC_NOR,
-  SPEC_PATH|SPEC_EPATH|SPEC_EQUERY|SPEC_EPARAMS|SPEC_ETAG|SPEC_EAUTH,
-/*  30 0    31 1     32 2    33 3     34 4    35 5     36 6    37 7     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  38 8    39 9     3a :    3b ;     3c <    3d =     3e >    3f ?     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC,
-  SPEC_EPATH|SPEC_QUERY|SPEC_EPARAMS|SPEC_ETAG|SPEC_EAUTH,
-  SPEC_ESC,
-  SPEC_ESC,
-/*  40 @    41 A     42 B    43 C     44 D    45 E     46 F    47 G     */
-  SPEC_ESC,   SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  48 H    49 I     4a J    4b K     4c L    4d M     4e N    4f O     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  50 P    51 Q     52 R    53 S     54 T    55 U     56 V    57 W     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  58 X    59 Y     5a Z    5b [     5c \    5d ]     5e ^    5f _     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ESC,
-  SPEC_ESC,   SPEC_ESC,   SPEC_ESC,   SPEC_NOR,
-/*  60 `    61 a     62 b    63 c     64 d    65 e     66 f    67 g     */
-  SPEC_ESC,   SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  68 h    69 i     6a j    6b k     6c l    6d m     6e n    6f o     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  70 p    71 q     72 r    73 s     74 t    75 u     76 v    77 w     */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM,
-/*  78 x    79 y     7a z    7b {     7c |    7d }     7e ~    7f del   */
-  SPEC_ALNUM, SPEC_ALNUM, SPEC_ALNUM, SPEC_ESC,
-  SPEC_ESC,   SPEC_ESC,   SPEC_NOR,   SPEC_ESC,
-
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-
-  SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC, SPEC_ESC,
-  SPEC_ESC, SPEC_ESC, 
-};
-
-int uri_scheme_generic_cannonicalize(uri_t* object, char* tmp, int* tmp_lengthp, int flag)
+int uri_scheme_generic_cannonicalize(uri_t* original, uri_t* object, char* tmp, int* tmp_sizep)
 {
-  int tmp_length = 0;
+  int tmp_size = 0;
 
   {
-    int length;
-#define normalize(w,s) if(object->w) { length = cannonicalize_component(object, object->w, tmp + tmp_length, (s), #s); object->w = tmp + tmp_length; tmp_length += length; if(length < 0) return URI_NOT_CANNONICAL; }
+    int size;
+#define normalize(w,s) \
+  if(object->w) \
+  { \
+    size = cannonicalize_component(object, object->w, tmp + tmp_size, (s), #s); \
+    if(size < 0) \
+      return URI_NOT_CANNONICAL; \
+    object->w = tmp + tmp_size; \
+    tmp_size += size; \
+  }
     /*
      * WARNING! keep the following call in the same order as in the 
      * original string.
@@ -272,54 +62,15 @@ int uri_scheme_generic_cannonicalize(uri_t* object, char* tmp, int* tmp_lengthp,
     normalize(path, SPEC_PATH);
     normalize(params, SPEC_PARAMS);
     normalize(query, SPEC_QUERY);
-    normalize(frag, SPEC_TAG);
+    normalize(frag, SPEC_FRAG);
     normalize(user, SPEC_AUTH);
     normalize(passwd, SPEC_AUTH);
 #undef normalize
   }
-  
-  /*
-   * Normalize case
-   */
-  if(object->scheme) strlower(object->scheme, -1);
+
   if(object->host) strlower(object->host, -1);
 
-  /*
-   * Sanity checks for relative URIs
-   */
-  if(object->info & URI_INFO_RELATIVE) {
-#define check(w) if(object->w != 0) { uri_error(object->pool_size, "cannonicalize: in %s, " #w " cannot be set in relative uri, ignored\n", uri_uri(object)); object->w = 0; object->info &= ~URI_INFO_URI; }
-    check(port);
-    check(passwd);
-    check(user);
-  }
-  /*
-   * Cleanup domain name variations
-   */
-  if(object->host) {
-    int length = strlen(object->host);
-    /*
-     * Kill trailing dots
-     */
-    while(length >= 1 && object->host[length - 1] == '.') {
-      length--;
-      object->host[length] = '\0';
-    }
-    if(length == 0) {
-      uri_error(object->pool_size, "uri_cannonicalize: %s has null netloc\n", uri_uri(object));
-      return URI_NOT_CANNONICAL;
-    }
-  }
-
-  if(flag != URI_CANNONICALIZE_TEST) {
-    /*
-     * Reduce path name, if not relative URI.
-     */
-    if(!(object->info & URI_INFO_RELATIVE)) 
-      minimal_path(object->path, -1);
-  }
-
-  *tmp_lengthp = tmp_length;
+  *tmp_sizep = tmp_size;
 
   return URI_CANNONICAL;
 }
@@ -327,10 +78,8 @@ int uri_scheme_generic_cannonicalize(uri_t* object, char* tmp, int* tmp_lengthp,
 void uri_scheme_generic_string(uri_t* object, char** stringp, int* string_sizep, int flags)
 {
   char* string;
-  /*
-   * + 16 is more than enough for separators & all 
-   */
-  static_alloc(stringp, string_sizep, object->pool_size + 16);
+
+  static_alloc(stringp, string_sizep, uri_estimate_pool_size(object));
 
   string = *stringp;
 
@@ -341,19 +90,7 @@ void uri_scheme_generic_string(uri_t* object, char** stringp, int* string_sizep,
   }
   if(object->host || object->user || object->passwd || object->port) {
     strcat(string, (flags & URI_STRING_FURI_STYLE ? "/" : "//"));
-    if(object->user) {
-      strcat(string, object->user);
-      if(object->passwd) {
-	strcat(string, ":");
-	strcat(string, object->passwd);
-      }
-      strcat(string, "@");
-    }
-    if(object->host) strcat(string, object->host);
-    if(object->port) {
-      strcat(string, ":");
-      strcat(string, object->port);
-    }
+    strcat(string, uri_auth_netloc(object));
   }
   if(!(object->info & URI_INFO_RELATIVE) ||
      !(object->info & URI_INFO_RELATIVE_PATH))
@@ -361,7 +98,7 @@ void uri_scheme_generic_string(uri_t* object, char** stringp, int* string_sizep,
   if(flags & URI_STRING_ROBOTS_STYLE) {
     strcat(string, "robots.txt");
   } else {
-    strcat(string, object->path);
+    if(object->path) strcat(string, object->path);
     if(object->params) {
       strcat(string, ";");
       strcat(string, object->params);
@@ -393,11 +130,8 @@ static uri_t* _relative = 0;
 
 uri_t* uri_abs(uri_t* base, char* relative_string, int relative_length)
 {
-  if(_relative == 0) {
-#define DUMMY "http://www.dummy.org/dir/file"
-    _relative = uri_alloc(DUMMY, strlen(DUMMY));
-#undef DUMMY
-  }
+  if(_relative == 0) _relative = uri_alloc_1();
+
   if(uri_realloc(_relative, relative_string, relative_length) != URI_CANNONICAL)
     return 0;
 
@@ -406,130 +140,448 @@ uri_t* uri_abs(uri_t* base, char* relative_string, int relative_length)
 
 static uri_t* absolute = 0;
 
+/*
+ * draft-fielding-uri-syntax-04.txt section 5.2
+ */
 uri_t* uri_abs_1(uri_t* base, uri_t* relative)
 {
   static char* path = 0;
   static int path_size = 0;
 
-  int no_relative_path = 0;
-
-  if(relative->info & URI_INFO_EMPTY)
-    return base;
   if(!(relative->info & URI_INFO_RELATIVE))
     return relative;
 
-  if(absolute == 0) {
-#define DUMMY "http://www.dummy.org/dir/file"
-    absolute = uri_alloc(DUMMY, strlen(DUMMY));
-#undef DUMMY
-  }
+  if(absolute == 0) absolute = uri_alloc_1();
 
-  if(absolute->pool_size < base->pool_size + relative->pool_size) {
-    absolute->pool_size = base->pool_size + relative->pool_size;
-    absolute->pool = (char*)srealloc(absolute->pool, absolute->pool_size);
+  {
+    int absolute_length = uri_estimate_pool_size(base) + uri_estimate_pool_size(relative);
+    if(absolute->pool_size < absolute_length)
+      static_alloc(&absolute->pool, &absolute->pool_size, absolute_length + 1);
   }
   uri_clear(absolute);
 
   /*
-   * Build the new absolute path by merging relative and base.
+   * 5.2 3) Accept scheme in relative URL. 
+   * In strict mode, if the scheme is present it's absolute
+   * In compatible mode, if the scheme is present and different from 
+   * base scheme, it's absolute.
    */
-  {
-    static_alloc(&path, &path_size,
-		 (relative->path ? strlen(relative->path) : 0) +
-		 (base->path ? strlen(base->path) : 0) + 1);
-    path[0] = '\0';
+  if((mode.flag & URI_MODE_URI_STRICT) ||
+     (mode.flag & URI_MODE_URI_STRICT_SCHEME)) {
+    if(relative->scheme)
+      return relative;
+  } else {
+    if(relative->scheme && strcasecmp(relative->scheme, base->scheme))
+      return relative;
+  }
 
-    /* 
-     * Move the base path to path, striping the last file name.
-     */
-    {
-      char* last_slash;
-      if(base->path && (last_slash = strrchr(base->path, '/'))) {
-	/* + 1 means that we want to keep the trailing / */
-	int length = last_slash - base->path + 1;
-	memcpy(path, base->path, length);
-	path[length] = '\0';
-      }
-    }
-    
+  /*
+   * Relative is empty, absolute equal base
+   */
+  if((relative->path == 0 || relative->path[0] == '\0') &&
+     relative->host == 0 && relative->query == 0 && relative->params == 0 &&
+     relative->frag == 0)
+    return base;
+
+  /*
+   * 5.2 2) Reference to the current document
+   */
+  if((relative->path == 0 || relative->path[0] == '\0') &&
+     relative->host == 0 && relative->query == 0 && relative->params == 0) {
+    absolute->scheme = base->scheme;
+    absolute->user = base->user;
+    absolute->passwd = base->passwd;
+    absolute->host = base->host;
+    absolute->port = base->port;
+    absolute->path = base->path;
+    absolute->params = base->params;
+    absolute->query = base->query;
+    absolute->frag = relative->frag;
+  } else {
     /*
-     * If the relative uri path is null or empty, keep the base path if any
+     * When we reach this part we know that the 'relative' object is
+     * not absolute, i.e. either host or scheme were omitted.
      */
-    if(relative->path == 0 ||
-       relative->path[0] == '\0') {
-      if(base->path) strcpy(path, base->path);
-      no_relative_path = 1;
+
+    if(mode.flag & URI_MODE_URI_STRICT)
+      absolute->scheme = base->scheme;
+    else
+      absolute->scheme = relative->scheme ? relative->scheme : base->scheme;
+      
+
     /*
-     * If the relative uri path is absolute, override base
+     * 5.2 4) Host set implies relative URL only needed scheme from base
      */
-    } else if(!(relative->info & URI_INFO_RELATIVE_PATH)) {
-      strcpy(path, relative->path);
-      minimal_path(path, -1);
-    /*
-     * If the relative uri path is relative, append to dirname of base path
-     * and reduce . and ..
-     */
+    if(relative->host) {
+      absolute->host = relative->host;
+      absolute->port = relative->port;
+      absolute->user = relative->user;
+      absolute->passwd = relative->passwd;
+      absolute->path = relative->path;
+      absolute->params = relative->params;
+      absolute->query = relative->query;
+      absolute->frag = relative->frag;
     } else {
-      strcat(path, relative->path);
-      minimal_path(path, -1);
+      absolute->host = base->host;
+      absolute->port = base->port;
+      absolute->user = base->user;
+      absolute->passwd = base->passwd;
+      /*
+       * 5.2 6) Build the new absolute path by merging relative and base.
+       */
+      static_alloc(&path, &path_size,
+		   (relative->path ? strlen(relative->path) : 0) +
+		   (base->path ? strlen(base->path) : 0) + 1);
+      path[0] = '\0';
+      if(relative->info & URI_INFO_RELATIVE_PATH) {
+	/* 
+	 * Move the base path to path, striping the last file name.
+	 */
+	{
+	  char* last_slash;
+	  if(base->path && (last_slash = strrchr(base->path, '/'))) {
+	    /* + 1 means that we want to keep the trailing / */
+	    int length = last_slash - base->path + 1;
+	    memcpy(path, base->path, length);
+	    path[length] = '\0';
+	  }
+	}
+    
+	/*
+	 * If the relative uri path is null or empty, keep the base path if any
+	 */
+	if(relative->path == 0 || relative->path[0] == '\0') {
+	  if((mode.flag & URI_MODE_URI_STRICT) == 0 || (relative->params == 0 && relative->query == 0))
+	    if(base->path) strcpy(path, base->path);
+	  /*
+	   * If the relative uri path is relative, append to dirname of 
+	   * base path and reduce . and ..
+	   */
+	} else {
+	  strcat(path, relative->path);
+	  minimal_path(path, -1);
+	}
+      } else {
+	/*
+	 * 5.2 5) Relative URL contains absolute path
+	 */
+	strcpy(path, relative->path);
+	minimal_path(path, -1);
+      }
+      absolute->path = path;
+      /*
+       * In strict mode all params+query are taken from the relative
+       * URL regardless. 
+       * In compatible mode params+query are kept from base if path
+       * is not set in relative, query is kept from base if params is
+       * not set in relative.
+       */
+      if((mode.flag & URI_MODE_URI_STRICT) ||
+	 (relative->path && relative->path[0] != '\0')) {
+	absolute->params = relative->params;
+	absolute->query = relative->query;
+      } else {
+	if(relative->params) {
+	  absolute->params = relative->params;
+	  absolute->query = relative->query;
+	} else {
+	  absolute->params = base->params;
+	  absolute->query = relative->query ? relative->query : base->query;
+	}
+      }
+      absolute->frag = relative->frag;
     }
   }
 
   /*
-   * Recombine components from base and relative into absolute
+   * 5.2 7) Recombine components from base and relative into absolute
    */
   {
     char* tmp;
     char* p = absolute->pool;
     int length;
-#define merge(w) \
-    if(tmp) { \
-      strcpy(p, tmp); \
+#define reloc(w) \
+    if(absolute->w) { \
+      strcpy(p, absolute->w); \
       absolute->w = p; \
-      p += strlen(tmp) + 1; \
-    } 
-    tmp = base->scheme ? base->scheme : relative->scheme;
-    merge(scheme);
-    tmp = base->host;
-    merge(host);
-    tmp = base->port;
-    merge(port);
-    tmp = path;
-    if(path[0] != '\0') {
-      merge(path);
-    } else {
-      absolute->path = p;
-      *p++ = '\0';
+      p += strlen(absolute->w) + 1; \
     }
-    if(no_relative_path) {
-      tmp = relative->params ? relative->params : base->params;
-      merge(params);
-      tmp = relative->query ? relative->query : base->query;
-      merge(query);
-      tmp = relative->frag ? relative->frag : base->frag;
-      merge(frag);
-    } else {
-      tmp = relative->params;
-      merge(params);
-      tmp = relative->query;
-      merge(query);
-      tmp = relative->frag;
-      merge(frag);
-    }
-    tmp = relative->user ? relative->user : base->user;
-    merge(user);
-    tmp = relative->passwd ? relative->passwd : base->passwd;
-    merge(passwd);
+    reloc(scheme);
+    reloc(user);
+    reloc(passwd);
+    reloc(host);
+    reloc(port);
+    reloc(path);
+    reloc(params);
+    reloc(query);
+    reloc(frag);
+#undef reloc
   }
-#undef merge
-  absolute->info = URI_INFO_CANNONICAL;
+  uri_scheme_switch(absolute, absolute->scheme, strlen(absolute->scheme));
   return absolute;
 }
+
+/*
+ * Access functions
+ */
+
+#define D(n) char* uri_scheme_generic_##n(uri_t* object) { return object->n ? object->n : ""; }
+D(scheme)
+D(host)
+     /* D(port) */
+D(path)
+D(params)
+D(query)
+D(frag)
+D(user)
+D(passwd)
+#undef D
+
+char* uri_scheme_generic_netloc(uri_t* object)
+{
+  static char* netloc = 0;
+  static int netloc_size = 0;
+
+  {
+    int length = 10 +
+      (object->host ? strlen(object->host) : 0) +
+      (object->port ? strlen(object->port) : 0);
+    
+    static_alloc(&netloc, &netloc_size, length);
+  }
+
+  netloc[0] = '\0';
+  if(object->host) {
+    /*
+     * Include port if exists and not default port of scheme.
+     */
+    if(object->port &&
+       (object->desc->port_char == 0 || strcmp(object->desc->port_char, object->port))) {
+      sprintf(netloc, "%s:%s", object->host, object->port);
+    } else {
+      strcpy(netloc, object->host);
+    }
+  }
+
+  return netloc;
+}
+
+char* uri_scheme_generic_auth(uri_t* object)
+{
+  static char* auth = 0;
+  static int auth_size = 0;
+
+  {
+    int length = 10 +
+      (object->user ? strlen(object->user) : 0) +
+      (object->passwd ? strlen(object->passwd) : 0);
+    
+    static_alloc(&auth, &auth_size, length);
+  }
+
+  if(object->user && object->passwd) {
+    sprintf(auth, "%s:%s", object->user, object->passwd);
+  } else if(object->user) {
+    strcpy(auth, object->user);
+  } else {
+    auth[0] = '\0';
+  }
+
+  return auth;
+}
+
+char* uri_scheme_generic_all_path(uri_t* object)
+{
+  static char* path = 0;
+  static int path_size = 0;
+
+  {
+    int length = 10 +
+      (object->path ? strlen(object->path) : 0) +
+      (object->params ? strlen(object->params) : 0) +
+      (object->query ? strlen(object->query) : 0);
+    
+    static_alloc(&path, &path_size, length);
+  }
+
+  path[0] = '\0';
+
+  if(!(object->info & URI_INFO_RELATIVE) ||
+     !(object->info & URI_INFO_RELATIVE_PATH))
+    strcat(path, "/");
+  if(object->path) strcat(path, object->path);
+  if(object->params) {
+    strcat(path, ";");
+    strcat(path, object->params);
+  }
+  if(object->query) {
+    strcat(path, "?");
+    strcat(path, object->query);
+  }
+
+  return path;
+}
+
+char* uri_scheme_generic_port(uri_t* object)
+{
+  if(object->port) return object->port;
+  if(object->desc && object->desc->port_int > 0) return object->desc->port_char;
+  return "";
+}
+
+/*
+ * Set structure fields. 
+ * Warning! The modified object may be inconsistent after such a 
+ * modification (URL_RELATIVE flag may be set and URL now absolute, for
+ * instance). uri_consistent must be called after a set of direct field
+ * modifications.
+ */
+
+#define B() \
+     /* Empty string is same as no string */ \
+     if(value && strlen(value) == 0) \
+       value = 0
+
+#define C(n,f) \
+     B(); \
+     /* Free previously allocated space. */ \
+     if(object->info & URI_INFO_M_##f) \
+       free(object->n); \
+     /* Invalidate cache, field not allocated anymore. */ \
+     object->info &= ~(URI_INFO_CACHE_MASK|URI_INFO_M_##f); \
+     /* Malloc if field not null and mode is always allocate. */ \
+     if((mode.flag & URI_MODE_FIELD_MALLOC) && value) { \
+       object->n = strdup(value); \
+       object->info |= URI_INFO_M_##f; \
+     } else \
+       object->n = value
+
+#define D(n,f) \
+  void uri_scheme_generic_##n##_set(uri_t* object, char* value)\
+  { \
+    C(n,f); \
+  }
+
+void uri_scheme_or_host_changed(uri_t* object)
+{
+  if(object->info & URI_INFO_RELATIVE) {
+    /*
+     * Object is no more relative : lose the distinction between
+     * relative and absolute path that only have a meaning when
+     * in a relative URL. A previously relative path will therefore
+     * become absolute but it's the responsibility of the caller
+     * to take care of that.
+     */
+    if(object->scheme && object->host) {
+      object->info &= ~(URI_INFO_RELATIVE|URI_INFO_RELATIVE_PATH);
+    }
+  } else {
+    if(!object->scheme || !object->host) {
+      /* 
+       * Object is no more absolute. Since the path is always
+       * absolute in an absolute URL, it stays absolute in the
+       * new relative URL. If a relative path is intended, it
+       * must be set with uri_path_set.
+       */
+      object->info |= URI_INFO_RELATIVE;
+      object->info &= ~(URI_INFO_RELATIVE_PATH);
+    }
+  }
+}
+    
+void uri_scheme_generic_scheme_set(uri_t* object, char* value)
+{
+  int changed;
+
+  B();
+  
+  changed = ((object->scheme == 0 && value != 0) ||
+	     (object->scheme != 0 && value == 0) ||
+	     (object->scheme && strcasecmp(object->scheme, value))
+	     );
+
+  C(scheme,SCHEME);
+
+  if(changed) {
+    uri_scheme_or_host_changed(object);
+    if(object->scheme)
+      uri_scheme_switch(object, object->scheme, strlen(object->scheme));
+  }
+}
+
+void uri_scheme_generic_host_set(uri_t* object, char* value)
+{
+  int changed;
+
+  B();
+
+  changed = ((object->host == 0 && value != 0) ||
+	     (object->host != 0 && value == 0) ||
+	     (object->host && strcasecmp(object->host, value))
+	     );
+
+  C(host, HOST);
+
+  if(changed)
+    uri_scheme_or_host_changed(object);
+}
+
+D(port,PORT)
+
+void uri_scheme_generic_path_set(uri_t* object, char* value)
+{
+  B();
+
+  if(value) {
+    if(object->info & URI_INFO_RELATIVE) {
+      if(*value == '/') {
+	object->info &= ~URI_INFO_RELATIVE_PATH;
+	value++;
+      } else 
+	object->info |= URI_INFO_RELATIVE_PATH;
+    }
+  } else {
+    object->info &= ~URI_INFO_RELATIVE_PATH;
+  }
+  C(path,PATH);
+}
+
+D(params,PARAMS)
+D(query,QUERY)
+D(frag,FRAG)
+D(user,USER)
+D(passwd,PASSWD)
+
+#undef B
+#undef C
+#undef D
+
 
 uri_scheme_desc_t uri_scheme_generic_desc = {
   /* parse */		uri_scheme_generic_parse,
   /* cannonicalize */	uri_scheme_generic_cannonicalize,
   /* string */		uri_scheme_generic_string,
+  /* scheme */		uri_scheme_generic_scheme,
+  /* host */		uri_scheme_generic_host,
+  /* port */		uri_scheme_generic_port,
+  /* path */		uri_scheme_generic_path,
+  /* params */		uri_scheme_generic_params,
+  /* query */		uri_scheme_generic_query,
+  /* frag */		uri_scheme_generic_frag,
+  /* user */		uri_scheme_generic_user,
+  /* passwd */		uri_scheme_generic_passwd,
+  /* netloc */		uri_scheme_generic_netloc,
+  /* passwd */		uri_scheme_generic_auth,
+  /* all_path */	uri_scheme_generic_all_path,
+  /* scheme_set */	uri_scheme_generic_scheme_set,
+  /* host_set */	uri_scheme_generic_host_set,
+  /* port_set */	uri_scheme_generic_port_set,
+  /* path_set */	uri_scheme_generic_path_set,
+  /* params_set */	uri_scheme_generic_params_set,
+  /* query_set */	uri_scheme_generic_query_set,
+  /* frag_set */	uri_scheme_generic_frag_set,
+  /* user_set */	uri_scheme_generic_user_set,
+  /* passwd_set */	uri_scheme_generic_passwd_set,
   /* specs */		uri_scheme_generic_specs,
   /* port_int */	-1,
   /* port_char */	0

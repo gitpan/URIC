@@ -1,0 +1,37 @@
+#!@PERL@
+
+%scheme2replace = (
+		   'file' => {
+		       #
+		       # ? is not escaped in path when in file scheme
+		       #
+		       '?' => 'SPEC_PATH',
+		   },
+		   'ftp' => {
+		       #
+		       # ? is not escaped in path when in ftp scheme
+		       #
+		       '?' => 'SPEC_PATH',
+		   },
+		   'generic' => {
+		   }
+);
+
+$source = "uri_escapes.txt";
+
+foreach $scheme ('generic', 'file', 'ftp') {
+    my($file) = "uri_escapes_$scheme.h";
+    my($replace) = $scheme2replace{$scheme};
+    open(FILE, ">$file") or die "cannot open $file for writing : $!";
+    print FILE "int uri_scheme_${scheme}_specs[256] = {\n";
+    open(SOURCE, "<$source") or die "cannot open $file for reading : $!";
+    while(<SOURCE>) {
+	chop;
+	my($num, $char, $sequence) = /(.*?) (.*)\t(.*)/;
+	$sequence = $replace->{$char} if($replace->{$char});
+	print FILE "/* $num $char */\t$sequence,\n";
+    }
+    print FILE "};\n";
+    close(SOURCE);
+    close(FILE);
+}

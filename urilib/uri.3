@@ -39,45 +39,108 @@ be fast and occupy as few memory as possible. The basic usage of this
 library is to transform an URI into a structure with one field for each
 component of the URI and vice versa.
 
-.SH FURI
-It is sometimes convinient to convert an URI into a path name. Some
-functions of the
-.B uri
-library provide such a conversion (uri_furi for instance). These path names
-are called FURI (File equivalent of an URI) for short. Here is a description
-of the transformation.
-.nf
-.ft CW
- http://www.ina.fr:700/imagina/index.html#queau
-   |    \\____________/ \\________________/\\____/
-   |          |              |               lost
-   |          |              |
-   |          |              |
-  /           |              |
-  |           |              |
-  |           |              |
-  |           |              |
- /            |              |
- |   /^^^^^^^^^^^^^\\/^^^^^^^^^^^^^^^^\\
-http/www.ina.fr:700/imagina/index.html
-.ft R
-.fi
+.SH LIBRARY MODE
+The library behaviour is controled by the flags described bellow. The
+default set of flag is
+.B URI_MODE_CANNONICAL|URI_MODE_ERROR_STDERR.
 
-.SH STRUCTURE
+.TP
+.B URI_MODE_CANNONICAL
+All objects store URI in cannonical form. 
+
+.TP
+.B URI_MODE_LOWER_SCHEME
+The scheme of the URI is always converted to lower case.
+
+.TP
+.B URI_MODE_ERROR_STDERR
+If an error occurs, the error string is printed on the STDERR chanel.
+
+.TP
+.B URI_MODE_FIELD_MALLOC
+Each field may have its own malloc'd space. When the caller set a field
+it can assume the content of the field is saved in the object. Otherwise
+when the caller sets a field it must make sure that the memory containing
+the value of the field will not be freed before the object is deallocated.
+
+.TP
+.B URI_MODE_URI_STRICT
+Behave in strict mode (see STRICTNESS below).
+
+.TP
+.B URI_MODE_URI_STRICT_SCHEME
+Behave in strict mode (see STRICTNESS below).
+
+.TP
+.B URI_MODE_FLAG_DEFAULT
+The default mode of the library.
+
+.SH STRUCTURE AND ALLOCATION
 The
 .B uri_t
-type is a structure describing the URI. The fields may be adressed directly.
-However a few access functions implement some usefull transformations and
-may be used (see
-.B uri_port
-or
-.B uri_netloc
-below for instance). All the fields are character strings whose size is
+type is a structure describing the URI. 
+Access functions are provided and should be used to get the values
+of the fields and set new values.
+All the fields are character strings whose size is
 exactly the size of the string they contain. One can safely override the
 values contained in the fields, as long as the replacement string has a 
 size lower or equal to the original size. If the replacement string is
-larger, one can safely set the pointer of a field to some arbitrary string.
-This operation will not lose any previously allocated space.
+larger, the caller must use a buffer of its own.
+
+If the flag
+.B URI_MODE_FIELD_MALLOC
+is not set, which is the default, the allocation policy for an
+.B uri_t 
+object is minimal. When an object is allocated using 
+.B uri_alloc,
+memory is allocated by the library to store the object. This memory will
+be released when the object is freed using
+.B uri_free.
+When a field is set, the pointer is stored in the object and no copy of
+the string is kept. It is the responsibility of the caller to make sure
+that the string will live as long as the object lives. This policy is 
+designed to prevent allocation as much as possible. Let's say you have
+a program that will operate on 50 000 URLs, only one malloc and a few
+realloc will be necessary instead of 50 000 malloc/free multiplied by
+the number of fields of the structure.
+The loop will look like this:
+.nf
+.ft CW
+	/*
+         * Alloc an empty object.
+	 */
+	uri_t* uri = uri_alloc_1();
+	
+	for(i = 0; i < 50000; i++) {
+	   /*
+	    * Reuse the object for another url, object grow
+	    * only if needed because the url is larger than
+	    * any previously seen url.
+	    */
+	   uri_realloc(uri, url[i], strlen(url[i]));
+	   ... do something on uri ...
+	   /*
+	    * Print the url on stdout
+	    */
+	   printf("%s\\n", uri_uri(uri));
+	}
+.ft R
+.fi
+
+If the flag
+.B URI_MODE_FIELD_MALLOC
+is set, each field will have a separatly allocated space, if necessary. The
+caller may assume that the object is always self contained and does not
+depend on externally allocated string. Each set function (uri_scheme_set,
+uri_host_set etc.) allocated the necessary space and duplicate the string
+given in argument. The 
+.B info
+field contains flags that record which fields contain a malloc'd space
+and which does not (URI_INFO_M_* flags). This information is only valid
+between two calls of the library functions. For instance 
+.B uri_cannonicalize
+will reorganize allocated space. This policy is used for integration of
+the library into scripting langages such as Perl. 
 
 .TP
 .B info
@@ -97,28 +160,21 @@ Set if the URI is a relative URI (does not start with {http,..}://).
 Set if the URI is a relative URI and the path does not start with a /.
 
 .PP
-.B URI_INFO_EMPTY
-Set if the URI is the empty string.
-
-.PP
-.B URI_INFO_HTTP
-Set if the URI scheme is http.
-
-.PP
-.B URI_INFO_FTP
-Set if the URI scheme is ftp.
-
-.PP
-.B URI_INFO_NEWS
-Set if the URI scheme is news.
-
-.PP
-.B URI_INFO_FILE
-Set if the URI scheme is file.
+.B URI_INFO_PARSED
+Set if the URI was successfully parsed. If this flag is not set the
+content of the object is undefined.
 
 .PP
 .B URI_INFO_ROBOTS
 Set if the URI is an http robots.txt file.
+
+.PP
+.B URI_INFO_M_*
+There is such a flag for each field of the 
+.B uri_t
+structure. If the flag is set, the memory pointed by this field has been
+allocated by
+.B malloc.
 
 .TP
 .B scheme
@@ -158,6 +214,12 @@ If authentication information is set, the password.
 
 .SH FUNCTIONS
 .TP
+.B uri_t* uri_alloc_1()
+Allocate an empty object that must be filled with the
+.B uri_realloc
+function.
+
+.TP
 .B uri_t* uri_alloc(char* uri, int uri_length)
 The
 .B uri
@@ -170,7 +232,7 @@ form an error message is printed on stderr and a null pointer is
 returned.
 
 .TP 
-.B uri_t* uri2object(char* uri, int uri_length)
+.B uri_t* uri_object(char* uri, int uri_length)
 The
 .B uri
 is splitted into fields and the corresponding
@@ -223,6 +285,24 @@ as the base URI. The returned
 object is allocated statically and must not be freed.
 
 .TP
+.B int uri_info(uri_t* object)
+returns the content of the 
+.B info 
+field.
+
+.TP
+.B char* uri_scheme(uri_t* object)
+returns the content of the 
+.B scheme 
+field.
+
+.TP
+.B char* uri_host(uri_t* object)
+returns the content of the 
+.B host 
+field.
+
+.TP
 .B char* uri_port(uri_t* object)
 returns the value of the
 .B port
@@ -239,6 +319,42 @@ string is returned.
 The returned string is statically allocated and must not be freed.
 
 .TP
+.B char* uri_path(uri_t* object)
+returns the content of the 
+.B path 
+field.
+
+.TP
+.B char* uri_params(uri_t* object)
+returns the content of the 
+.B params 
+field.
+
+.TP
+.B char* uri_query(uri_t* object)
+returns the content of the 
+.B path 
+field.
+
+.TP
+.B char* uri_frag(uri_t* object)
+returns the content of the 
+.B frag 
+field.
+
+.TP
+.B char* uri_user(uri_t* object)
+returns the content of the 
+.B user 
+field.
+
+.TP
+.B char* uri_passwd(uri_t* object)
+returns the content of the 
+.B passwd 
+field.
+
+.TP
 .B char* uri_netloc(uri_t* object)
 returns a concatenation of the
 .B host
@@ -250,6 +366,28 @@ If the
 .B host
 field is not set, the null pointer is returned and a message
 is printed on stderr.
+The returned string is statically allocated and must not be freed.
+
+.TP
+.B char* uri_auth_netloc(uri_t* object)
+returns a concatenation of the
+.B host
+and
+.B port
+field, separated by a
+.B :.
+If the 
+.B user
+field is set, the 
+.B user
+and 
+.B passwd
+fields are prepended to the
+netloc, separated by a @.
+If the
+.B host
+field is not set, the null pointer is returned and error
+condition is set.
 The returned string is statically allocated and must not be freed.
 
 .TP
@@ -274,6 +412,56 @@ fields in the form
 The returned string is statically allocated and must not be freed.
 
 .TP
+.B void uri_info_set(uri_t* object, int value)
+set the info field to value.
+
+.TP
+.B void uri_scheme_set(uri_t* object, char* value)
+set the scheme field to value. The 
+.B URI_INFO_RELATIVE
+is updated according to the new value.
+
+.TP
+.B void uri_host_set(uri_t* object, char* value)
+set the host field to value. The 
+.B URI_INFO_RELATIVE
+is updated according to the new value.
+
+.TP
+.B void uri_params_set(uri_t* object, char* value)
+set the params field to value.
+
+.TP
+.B void uri_query_set(uri_t* object, char* value)
+set the query field to value.
+
+.TP
+.B void uri_user_set(uri_t* object, char* value)
+set the user field to value.
+
+.TP
+.B void uri_passwd_set(uri_t* object, char* value)
+set the passwd field to value.
+
+.TP
+.B void uri_copy(uri_t* to, uri_t* from)
+copy the content of object 
+.B from
+into object
+.B to.
+
+.TP
+.B uri_t* uri_clone(uri_t* from)
+creates a new object containing the same data as
+.B from.
+The returned object must be freed using uri_free.
+
+.TP
+.B void uri_clear(uri_t* object)
+clear all information contained in 
+.B object.
+
+.TP
 .B char* uri_furi(uri_t* object)
 returns a string containing the FURI (File equivalent of an URI) built
 from 
@@ -288,14 +476,22 @@ from
 The returned string is statically allocated and must not be freed.
 
 .TP
-.B char* uri_robots(uri_t* object)
-returns a string containing the URI of the robots.txt file corresponding
-to the URI contained in object. For instance, if the URI contained in 
-object is 
-.B http://www.foo.com/dir/dir/file.html
-the returned string will be
-.B http://www.foo.com/robots.txt.
-The returned string is statically allocated and must not be freed.
+.B char* uri_escape(char* string, char* range)
+return a statically allocated copy of 
+.B string
+with all characters found in the the 
+.B range
+string transformed in escaped form (%xx).
+A few examples of 
+.B range
+argument are defined: URI_ESCAPE_RESERVED, URI_ESCAPE_PATH, 
+URI_ESCAPE_QUERY, and uri_escape_unsafe. 
+
+.TP
+.B char* uri_unescape(char* string)
+return a statically allocated copy of 
+.B string
+with all escape sequences (%xx) transformed to characters.
 
 .TP
 .B char* uri_cannonicalize_string(char* uri, int uri_length, int flag)
@@ -315,13 +511,43 @@ return the corresponding robots.txt URI,
 .B URI_STRING_URI_NOHASH_STYLE
 do not include the frag in the returned string.
 
+.TP
+.B uri_t* uri_cannonical(uri_t* object)
+returns an object containing the cannonical form of 
+.B object. 
+If the 
+.B URI_MODE_CANNONICAL 
+flag is set, the object itself is returned.
+
+.TP
+.B int uri_consistent(uri_t* object)
+Returns 0 if
+.B object
+contains unparsable URL, returns != 0 if
+.B object
+contains a well formed URL. Must be called after a set
+of field changes to reset flags and ensure that modified URL
+is well formed.
+
+.SH HTTP FUNCTIONS
+
+.TP
+.B char* uri_robots(uri_t* object)
+returns a string containing the URI of the robots.txt file corresponding
+to the URI contained in object. For instance, if the URI contained in 
+object is 
+.B http://www.foo.com/dir/dir/file.html
+the returned string will be
+.B http://www.foo.com/robots.txt.
+The returned string is statically allocated and must not be freed.
+
 .SH CANNONICAL FORM
 The cannonical form of an URI is an arbitrary choice to code all the
 possible variations of the same URI in one string. For instance
 http://www.foo.com/abc"def.html will be transformed to 
 http://www.foo.com/abc%22def.html. Most of the transformations follow
 the instructions found in
-.B rfc1738
+.B draft-fielding-uri-syntax-04
 but some of them don't. 
 .PP
 Additionally, when the path of the URI contains dots and double dots, it
@@ -330,6 +556,73 @@ is reduced. For instance
 will be transformed to
 .B http://www.foo.com/file.html.
 
+If the
+.B URI_MODE_CANNONICAL
+flag is set, the 
+.B uri_t
+object always contains the cannonical form of the URL. The original form
+is lost. 
+
+If the
+.B URI_MODE_CANNONICAL
+flag is not set, the cannonical form of the URI is stored in a 
+separate object. The 
+.B uri_t
+object contains the original form of the URI. It takes more memory to
+store but may be usefull in some situations.
+
+.SH ERROR HANDLING
+When an error occurs (URI cannot be cannonicalized or parsed, for instance),
+the global variable 
+.B uri_errstr
+contains the full text of the error message. This variable is never reset
+by the library functions if no error occurs.
+
+Additionally, the error string may be printed on the error chanel (STDERR)
+if the 
+.B URI_MODE_ERROR_STDERR
+flag is set. This is the default.
+
+.SH STRICTNESS
+The draft describing URI syntax (draft-fielding-uri-syntax-04) specifies
+that an URI of the type http:g may be
+interpreted in two different ways. If the 
+.B URI_MODE_URI_STRICT
+flag is set, the library interprets it as an absolute URI, otherwise
+it is a relative URI. 
+
+If the 
+.B URI_MODE_URI_STRICT
+is not set, the 
+.B URI_MODE_URI_STRICT_SCHEME
+may be set so that a relative URI containing a scheme is interpreted as
+an absolute URI only if the scheme is different from the scheme of the
+base URI. 
+
+.SH FURI
+It is sometimes convinient to convert an URI into a path name. Some
+functions of the
+.B uri
+library provide such a conversion (uri_furi for instance). These path names
+are called FURI (File equivalent of an URI) for short. Here is a description
+of the transformation.
+.nf
+.ft CW
+ http://www.ina.fr:700/imagina/index.html#queau
+   |    \\____________/ \\________________/\\____/
+   |          |              |               lost
+   |          |              |
+   |          |              |
+  /           |              |
+  |           |              |
+  |           |              |
+  |           |              |
+ /            |              |
+ |   /^^^^^^^^^^^^^\\/^^^^^^^^^^^^^^^^\\
+http/www.ina.fr:700/imagina/index.html
+.ft R
+.fi
+
 .SH EXAMPLES
 .PP
 .B Show cannonical form of URI
@@ -337,7 +630,7 @@ will be transformed to
 .ft CW
 char* uri = "http://www.foo.com/";
 uri = uri_cannonicalize_string(uri, strlen(uri), URI_STRING_URI_STYLE);
-if(uri) printf("uri = %s\n", uri);
+if(uri) printf("uri = %s\\n", uri);
 .ft R
 .fi
 .PP
@@ -346,7 +639,7 @@ if(uri) printf("uri = %s\n", uri);
 .ft CW
 char* uri = "http://www.foo.com:7000/";
 uri_t* uri_object = uri_object(uri, strlen(uri));
-if(uri_object) printf("netloc = %s\n", uri_netloc(uri_object));
+if(uri_object) printf("netloc = %s\\n", uri_netloc(uri_object));
 .ft R
 .fi
 .PP
@@ -356,12 +649,12 @@ if(uri_object) printf("netloc = %s\n", uri_netloc(uri_object));
 char* uri = "http://www.foo.com/cgi-bin/bar?param=1";
 uri_t* uri_object = uri_object(uri, strlen(uri));
 if(uri_object) {
-	uri_object->query = "param=2";
-	printf("uri = %s\n", uri_uri(uri_object));
+	uri_query_set(uri_object, "param=2");
+	printf("uri = %s\\n", uri_uri(uri_object));
 }
 .ft R
 .fi
 .SH AUTHOR
 Loic Dachary loic@ceic.com Civil Engineering in Cyberspace
 .SH SEE ALSO
-rfc1738
+draft-fielding-uri-syntax-04

@@ -1,4 +1,4 @@
-%module uri
+%module URIC
 %{
 #include "urilib/uri.h"
 %}

@@ -1,0 +1,719 @@
+# 
+# Auto cannonical is off
+# 
+#
+# ! comments are # alone or # followed by space
+#
+# empty url
+#
+#
+# 
+#
+uri: 
+furi: 
+#
+# Relative URL : query only
+#
+#
+# ?foo=rugue&bar
+#
+uri: ?foo=rugue&bar
+furi: ?foo=rugue&bar
+#
+# Relative URL : params only
+#
+#
+# ;foo=rugue&bar
+#
+uri: ;foo=rugue&bar
+furi: ;foo=rugue&bar
+#
+# Relative URL : frag only
+#
+#
+# #fragment
+#
+uri: #fragment
+furi: 
+#
+# Null domain is rejected
+#
+#
+# http://:8080/
+#
+uri: uri_cannonicalize: http://:8080/ has null netloc
+#
+# Relative URL : user + passwd  and fragment 
+#
+#
+# http://loic:foo34@/#frag
+#
+uri: cannonicalize: in http://#frag, passwd cannot be set in relative uri
+#
+# Relative URL : scheme and frag
+#
+#
+# http:#frag
+#
+uri: http:#frag
+furi: http:
+#
+# Relative URL : relative path
+#
+#
+# bar/foo/
+#
+uri: bar/foo/
+furi: bar/foo/
+#
+# Relative URL : absolute path
+#
+#
+# /bar/foo/
+#
+uri: /bar/foo/
+furi: /bar/foo/
+#
+# Relative URL : path containing .. and . are not reduced
+#
+#
+# ../bar/../foo/
+#
+uri: ../bar/../foo/
+furi: ../bar/../foo/
+#
+# Relative URL : include scheme and absolute path
+#
+#
+# http:/bar/foo
+#
+uri: http:/bar/foo
+furi: http:/bar/foo
+#
+# Relative URL : include scheme and relative path
+#
+#
+# http:bar/foo
+#
+uri: http:bar/foo
+furi: http:bar/foo
+#
+# Normal URL
+#
+#
+# http://www.ceic.com/
+#
+uri: http://www.ceic.com/
+furi: http:/www.ceic.com/
+#
+# Upper case scheme
+#
+#
+# HTTP://www.ceic.com/
+#
+uri: HTTP://www.ceic.com/
+furi: HTTP:/www.ceic.com/
+#
+# Upper case domain
+#
+#
+# HTTP://www.CEIC.com/
+#
+uri: HTTP://www.CEIC.com/
+furi: HTTP:/www.CEIC.com/
+#
+# Trailing dot in domain
+#
+#
+# http://www.ceic.com./
+#
+uri: http://www.ceic.com./
+furi: http:/www.ceic.com./
+#
+# Port number specified
+#
+#
+# http://www.ceic.com:8400/
+#
+uri: http://www.ceic.com:8400/
+furi: http:/www.ceic.com:8400/
+#
+# Superfluous port number specified
+#
+#
+# http://www.ceic.com:80/
+#
+uri: http://www.ceic.com/
+furi: http:/www.ceic.com/
+#
+# query argument
+#
+#
+# http://www.ceic.com:8400/cgi.pl?foo
+#
+uri: http://www.ceic.com:8400/cgi.pl?foo
+furi: http:/www.ceic.com:8400/cgi.pl?foo
+#
+# query and params arguments
+#
+#
+# http://www.ceic.com:8400/cgi.pl;bar?foo
+#
+uri: http://www.ceic.com:8400/cgi.pl;bar?foo
+furi: http:/www.ceic.com:8400/cgi.pl;bar?foo
+#
+# Fragment
+#
+#
+# http://www.ceic.com:8400/foo/bar/nitz.html#frob
+#
+uri: http://www.ceic.com:8400/foo/bar/nitz.html#frob
+furi: http:/www.ceic.com:8400/foo/bar/nitz.html
+#
+# Full authentification
+#
+#
+# http://loic:foobar@www.ceic.com:8400/foo/bar/nitz.html#frob
+#
+uri: http://loic:foobar@www.ceic.com:8400/foo/bar/nitz.html#frob
+furi: http:/loic:foobar@www.ceic.com:8400/foo/bar/nitz.html
+#
+# Full authentification
+#
+#
+# http://john:lec%7erre@www.ceic.com/
+#
+uri: http://john:lec%7erre@www.ceic.com/
+furi: http:/john:lec%7erre@www.ceic.com/
+#
+# Only user name
+#
+#
+# http://redford@www.ceic.com:8400/
+#
+uri: http://redford@www.ceic.com:8400/
+furi: http:/redford@www.ceic.com:8400/
+#
+# Reserverd chars in path
+#
+#
+# http://redford@www.ceic.com:8400/:foo&'bar@=/dir/file.html
+#
+uri: http://redford@www.ceic.com:8400/:foo&'bar@=/dir/file.html
+furi: http:/redford@www.ceic.com:8400/:foo&'bar@=/dir/file.html
+#
+# / in user name
+#
+#
+# http://red%2fgros@www.ceic.com:8400/
+#
+uri: http://red%2fgros@www.ceic.com:8400/
+furi: http:/red%2fgros@www.ceic.com:8400/
+#
+# / in domain
+#
+#
+# http://redgros@www.c%2feic.com:8400/
+#
+uri: cannonicalize_component: illegal char / in context SPEC_NETLOC
+#
+# / in query part
+#
+#
+# http://www.ceic.com:8400/cgi-bin/script?bar/foo#ta/g
+#
+uri: http://www.ceic.com:8400/cgi-bin/script?bar/foo#ta/g
+furi: http:/www.ceic.com:8400/cgi-bin/script?bar/foo
+#
+# bad scheme
+#
+#
+# ttp://www.ceic.com/
+#
+uri: unknown scheme ttp found in url ttp://www.ceic.com/
+#
+# Trailing dots in domain name are suppressed
+#
+#
+# http://www.ceic.com../cgi-bin/script
+#
+uri: http://www.ceic.com../cgi-bin/script
+furi: http:/www.ceic.com../cgi-bin/script
+#
+# Null domain name is rejected
+#
+#
+# http://../dir/
+#
+uri: uri_cannonicalize: http://../dir/ has null netloc
+#
+# Double / in path is reduced
+#
+#
+# http://www.ceic.com/dir//file.html
+#
+uri: http://www.ceic.com/dir//file.html
+furi: http:/www.ceic.com/dir//file.html
+#
+# 8 bit char in path name
+#
+#
+# http://www.ceic.com/©t©/
+#
+uri: http://www.ceic.com/©t©/
+furi: http:/www.ceic.com/©t©/
+#
+# Control chars in path name
+#
+#
+# http://www.ceic.com/t/
+#
+uri: http://www.ceic.com/t/
+furi: http:/www.ceic.com/t/
+#
+# Coded / in path name
+#
+#
+# http://www.ceic.com/%2F/dir/
+#
+uri: http://www.ceic.com/%2F/dir/
+furi: http:/www.ceic.com/%2F/dir/
+#
+# .. in path
+#
+#
+# http://www.ceic.com/dir/../file
+#
+uri: http://www.ceic.com/dir/../file
+furi: http:/www.ceic.com/dir/../file
+#
+# . in path
+#
+#
+# http://www.ceic.com/dir/./file
+#
+uri: http://www.ceic.com/dir/./file
+furi: http:/www.ceic.com/dir/./file
+#
+# ./ at the beginning
+#
+#
+# http://www.ceic.com/./file
+#
+uri: http://www.ceic.com/./file
+furi: http:/www.ceic.com/./file
+#
+# /. at the end
+#
+#
+# http://www.ceic.com/file/.
+#
+uri: http://www.ceic.com/file/.
+furi: http:/www.ceic.com/file/.
+#
+# /./ at the end
+#
+#
+# http://www.ceic.com/file/./
+#
+uri: http://www.ceic.com/file/./
+furi: http:/www.ceic.com/file/./
+#
+# /.. at the end
+#
+#
+# http://www.ceic.com/dir1/dir2/..
+#
+uri: http://www.ceic.com/dir1/dir2/..
+furi: http:/www.ceic.com/dir1/dir2/..
+#
+# too many .. block at root
+#
+#
+# http://www.ceic.com/file/../dir/../../foo
+#
+uri: http://www.ceic.com/file/../dir/../../foo
+furi: http:/www.ceic.com/file/../dir/../../foo
+#
+# Path reduction in relative URL
+#
+#
+# /../foo.html http://w3.austin.ibm.com/
+#
+uri: /../foo.html
+furi: /../foo.html
+uri base: http://w3.austin.ibm.com/
+uri absolute: http://w3.austin.ibm.com/foo.html
+#
+# /bar/../foo.html http://w3.austin.ibm.com/
+#
+uri: /bar/../foo.html
+furi: /bar/../foo.html
+uri base: http://w3.austin.ibm.com/
+uri absolute: http://w3.austin.ibm.com/foo.html
+#
+# relative path converted to absolute using base
+#
+#
+# document.html http://www.senat.fr/
+#
+uri: document.html
+furi: document.html
+uri base: http://www.senat.fr/
+uri absolute: http://www.senat.fr/document.html
+#
+# relative frag converted to absolute using base
+#
+#
+# #frag http://www.senat.fr/
+#
+uri: #frag
+furi: 
+uri base: http://www.senat.fr/
+uri absolute: http://www.senat.fr/#frag
+#
+# relative path converted to absolute using base, 
+# the relative path starts with a /
+#
+#
+# /document.html http://www.senat.fr/iway/
+#
+uri: /document.html
+furi: /document.html
+uri base: http://www.senat.fr/iway/
+uri absolute: http://www.senat.fr/document.html
+#
+# Double slash at the beginning of the relative URL
+#
+#
+# //www.curie.u-psud.fr/umr146/ http://www.curie.fr/
+#
+uri: //www.curie.u-psud.fr/umr146/
+furi: /www.curie.u-psud.fr/umr146/
+uri base: http://www.curie.fr/
+uri absolute: http://www.curie.u-psud.fr/umr146/
+#
+# Strip extra / in path.
+#
+#
+# http://www.foo.bar/bar//foo/file//
+#
+uri: http://www.foo.bar/bar//foo/file//
+furi: http:/www.foo.bar/bar//foo/file//
+#
+# Strip extra / in path for relative URLs
+#
+#
+# /bar/////bbobo/grunt.html http://www.pire.org/
+#
+uri: /bar/////bbobo/grunt.html
+furi: /bar/////bbobo/grunt.html
+uri base: http://www.pire.org/
+uri absolute: http://www.pire.org/bar/bbobo/grunt.html
+#
+# ftp scheme
+#
+#
+# ftp://www.foo.bar/bar/
+#
+uri: ftp://www.foo.bar/bar/
+furi: ftp:/www.foo.bar/bar/
+#
+# no query part and ? not escaped
+#
+#
+# ftp://www.foo.bar/bar?foo/bar
+#
+uri: ftp://www.foo.bar/bar?foo/bar
+furi: ftp:/www.foo.bar/bar?foo/bar
+#
+# anonymous user is implicit
+#
+#
+# ftp://ftp@www.foo.bar/bar?foo/bar
+#
+uri: ftp://ftp@www.foo.bar/bar?foo/bar
+furi: ftp:/ftp@www.foo.bar/bar?foo/bar
+#
+# anonymous user is implicit
+#
+#
+# ftp://anonymous@www.foo.bar/bar?foo/bar
+#
+uri: ftp://anonymous@www.foo.bar/bar?foo/bar
+furi: ftp:/anonymous@www.foo.bar/bar?foo/bar
+#
+# anonymous user is not implicit if password specified
+#
+#
+# ftp://anonymous:pass@www.foo.bar/bar?foo/bar
+#
+uri: ftp://anonymous:pass@www.foo.bar/bar?foo/bar
+furi: ftp:/anonymous:pass@www.foo.bar/bar?foo/bar
+#
+# mailto scheme
+#
+#
+# mailto:loic@ceic.com
+#
+uri: mailto:loic@ceic.com
+furi: mailto:loic@ceic.com
+#
+# file scheme
+#
+#
+# file:/dir/a/b/c.html
+#
+uri: file:/dir/a/b/c.html
+furi: file:/dir/a/b/c.html
+#
+# with hostname
+#
+#
+# file://hostname/dir/a/b/c.html
+#
+uri: file://hostname/dir/a/b/c.html
+furi: file:/hostname/dir/a/b/c.html
+#
+# with hostname = localhost, ignored
+#
+#
+# file://locAlhost/dir/a/b/c.html
+#
+uri: file:/dir/a/b/c.html
+furi: file:/dir/a/b/c.html
+#
+# with hostname null
+#
+#
+# file:///dir/a/b/c.html
+#
+uri: file:/dir/a/b/c.html
+furi: file:/dir/a/b/c.html
+#
+# with frag
+#
+#
+# file://dir/a/b/c.html#frag
+#
+uri: file://dir/a/b/c.html#frag
+furi: file:/dir/a/b/c.html
+#
+# with ? in path, must not be escaped as it
+# would be in http for instance
+#
+#
+# file:/dir/a/b?/c.html
+#
+uri: file:/dir/a/b?/c.html
+furi: file:/dir/a/b?/c.html
+#
+# gopher scheme
+#
+#
+# gopher://host:10/Tfoo%09bar%09foobar
+#
+uri: gopher://host:10/Tfoo%09bar%09foobar
+furi: gopher://host:10/Tfoo%09bar%09foobar
+#
+# missing all -> type = 1
+#
+#
+# gopher://host
+#
+uri: gopher://host/
+furi: gopher://host/
+#
+# only type + selector + search
+#
+#
+# gopher://host/Tfoo%09bar
+#
+uri: gopher://host/Tfoo%09bar
+furi: gopher://host/Tfoo%09bar
+#
+# only type + selector
+#
+#
+# gopher://host/Tfoo
+#
+uri: gopher://host/Tfoo
+furi: gopher://host/Tfoo
+#
+# only type
+#
+#
+# gopher://host/T
+#
+uri: gopher://host/T
+furi: gopher://host/T
+#
+# news scheme
+#
+#
+# news:alt.adoptive.parenting
+#
+uri: news:alt.adoptive.parenting
+furi: news:alt.adoptive.parenting
+#
+# Article
+#
+#
+# news:EFGJG4.7A@deshaw.com
+#
+uri: news:EFGJG4.7A@deshaw.com
+furi: news:EFGJG4.7A@deshaw.com
+#
+# Article + host
+#
+#
+# news://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+#
+uri: news://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+furi: news://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+#
+# Group + host
+#
+#
+# news://adenine.c.dna.affrc.go.jp/misc.transport.air-industry.cargo
+#
+uri: news://adenine.c.dna.affrc.go.jp/misc.transport.air-industry.cargo
+furi: news://adenine.c.dna.affrc.go.jp/misc.transport.air-industry.cargo
+#
+# Empty article or group
+#
+#
+# news://news.foo.com/
+#
+uri: news_parse: empty group or article in news://news.foo.com/
+#
+# snews scheme
+#
+#
+# snews://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+#
+uri: snews://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+furi: snews://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+#
+# nntp scheme
+#
+#
+# nntp://news.ceic.com/alt.binaries/234
+#
+uri: nntp://news.ceic.com/alt.binaries/234
+furi: nntp://news.ceic.com/alt.binaries/234
+#
+# missing article
+#
+#
+# nntp://news.ceic.com/alt.binaries
+#
+uri: nntp_parse: empty article in nntp://news.ceic.com/alt.binaries
+#
+# missing group
+#
+#
+# nntp://news.ceic.com/
+#
+uri: nntp_parse: empty group in nntp://news.ceic.com/
+#
+# other port
+#
+#
+# nntp://news.ceic.com:8080/alt.binaries/234
+#
+uri: nntp://news.ceic.com:8080/alt.binaries/234
+furi: nntp://news.ceic.com:8080/alt.binaries/234
+#
+# superfluous port
+#
+#
+# nntp://news.ceic.com:119/alt.binaries/234
+#
+uri: nntp://news.ceic.com/alt.binaries/234
+furi: nntp://news.ceic.com/alt.binaries/234
+#
+# superfluous /
+#
+#
+# nntp://news.ceic.com///alt.binaries/234
+#
+uri: nntp://news.ceic.com/alt.binaries/234
+furi: nntp://news.ceic.com/alt.binaries/234
+#
+# empty host
+#
+#
+# nntp:///alt.binaries/234
+#
+uri: nntp_parse: empty host in nntp:///alt.binaries/234
+#
+# wais scheme
+#
+#
+# wais://wais.ceic.com/base
+#
+uri: wais://wais.ceic.com/base
+furi: wais://wais.ceic.com/base
+#
+# including query
+#
+#
+# wais://wais.ceic.com/base?query
+#
+uri: wais://wais.ceic.com/base?query
+furi: wais://wais.ceic.com/base?query
+#
+# including wtype and wpath
+#
+#
+# wais://wais.ceic.com/base/wtype/wpath
+#
+uri: wais://wais.ceic.com/base/wtype/wpath
+furi: wais://wais.ceic.com/base/wtype/wpath
+#
+# including wtype and wpath and query
+#
+#
+# wais://wais.ceic.com/base/wtype/wpath?query
+#
+uri: wais_parse: unexpected wtype or wpath with query in wais://wais.ceic.com/base?query
+#
+# missing wpath
+#
+#
+# wais://wais.ceic.com/base/wtype
+#
+uri: wais_parse: missing wpath in wais://wais.ceic.com/base/wtype
+#
+# superflous port
+#
+#
+# wais://wais.ceic.com:210/base/wtype/wpath
+#
+uri: wais://wais.ceic.com/base/wtype/wpath
+furi: wais://wais.ceic.com/base/wtype/wpath
+#
+# superflous /
+#
+#
+# wais://wais.ceic.com//base/wtype/wpath
+#
+uri: wais://wais.ceic.com/base/wtype/wpath
+furi: wais://wais.ceic.com/base/wtype/wpath
+#
+# other port
+#
+#
+# wais://wais.ceic.com:8080//base/wtype/wpath
+#
+uri: wais://wais.ceic.com:8080/base/wtype/wpath
+furi: wais://wais.ceic.com:8080/base/wtype/wpath
+#
+# user auth
+#
+#
+# wais://usr:pass@wais.ceic.com//base/wtype/wpath
+#
+uri: wais://usr:pass@wais.ceic.com/base/wtype/wpath
+furi: wais://usr:pass@wais.ceic.com/base/wtype/wpath

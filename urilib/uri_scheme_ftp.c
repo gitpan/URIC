@@ -19,20 +19,69 @@
  *   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
  *
  */
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif /* HAVE_CONFIG_H */
-
+#include <uri_util.h>
 #include <uri.h>
 #include <uri_schemes.h>
 #include <uri_scheme_generic.h>
 
+#include <uri_escapes_ftp.h>
+
+int uri_scheme_ftp_parse(uri_t* object)
+{
+  return uri_parse_generic(object, URI_SCHEME_GENERIC_PARSE_SKIP_QUERY);
+}
+
+int uri_scheme_ftp_cannonicalize(uri_t* original, uri_t* object, char* tmp, int* tmp_sizep)
+{
+  /*
+   * Anonymous user is implicit if passwd is not set
+   */
+  if(object->info & URI_INFO_PARSED) {
+    if(!object->user ||
+       (object->user &&
+	!object->passwd &&
+	(!strcasecmp(object->user, "ftp") ||
+	 !strcasecmp(object->user, "anonymous")))) {
+      object->user = 0;
+    }
+  }
+  return uri_scheme_generic_cannonicalize(original, object, tmp, tmp_sizep);
+}
+
+char* uri_scheme_ftp_user(uri_t* object)
+{
+  if(!object->user || !strcasecmp(object->user, "ftp"))
+    return "anonymous";
+  else
+    return object->user;
+}
 
 uri_scheme_desc_t uri_scheme_ftp_desc = {
-  /* parse */		uri_scheme_generic_parse,
-  /* cannonicalize */	uri_scheme_generic_cannonicalize,
+  /* parse */		uri_scheme_ftp_parse,
+  /* cannonicalize */	uri_scheme_ftp_cannonicalize,
   /* string */		uri_scheme_generic_string,
-  /* specs */		uri_scheme_generic_specs,
+  /* scheme */		uri_scheme_generic_scheme,
+  /* host */		uri_scheme_generic_host,
+  /* port */		uri_scheme_generic_port,
+  /* path */		uri_scheme_generic_path,
+  /* params */		uri_scheme_generic_params,
+  /* query */		uri_scheme_generic_query,
+  /* frag */		uri_scheme_generic_frag,
+  /* user */		uri_scheme_ftp_user,
+  /* passwd */		uri_scheme_generic_passwd,
+  /* netloc */		uri_scheme_generic_netloc,
+  /* passwd */		uri_scheme_generic_auth,
+  /* all_path */	uri_scheme_generic_all_path,
+  /* scheme_set */	uri_scheme_generic_scheme_set,
+  /* host_set */	uri_scheme_generic_host_set,
+  /* port_set */	uri_scheme_generic_port_set,
+  /* path_set */	uri_scheme_generic_path_set,
+  /* params_set */	uri_scheme_generic_params_set,
+  /* query_set */	uri_scheme_generic_query_set,
+  /* frag_set */	uri_scheme_generic_frag_set,
+  /* user_set */	uri_scheme_generic_user_set,
+  /* passwd_set */	uri_scheme_generic_passwd_set,
+  /* specs */		uri_scheme_ftp_specs,
   /* port_int */	21,
   /* port_char */	"21"
 };

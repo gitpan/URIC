@@ -33,11 +33,14 @@ LIB_OBJ = \
 	liburi.a(uri.o) \
 	liburi.a(uri_schemes.o) \
 	liburi.a(uri_util.o) \
+	liburi.a(uri_parse.o) \
 	liburi.a(uri_scheme_generic.o) \
 	liburi.a(mpath.o) \
 	liburi.a(strlower.o) \
 	liburi.a(salloc.o) \
 	liburi.a(split.o) \
+	liburi.a(getopt.o) \
+	liburi.a(getopt1.o) \
 	$(URI_SCHEMES)
 
 LIB = liburi.a
@@ -54,23 +57,44 @@ install: all
 	cp -p uri.3 $(MANDIR)/man3/
 
 clean:
-	rm -f $(LIB) *.o t/*.out t_uri gen_schemes
+	rm -f $(LIB) *.o t/*.out t_uri gen_schemes 
 
 realclean: clean
 	rm -f Makefile config.cache config.h config.log config.status *~ core
-	rm -f .pure *pure* t/*~ uri_test
+	rm -f .pure *pure* t/*~ uri_test core gen_escapes
 
 t_uri: $(LIB)
 
-test: t_uri
+test: t_uri 
 	#
 	# If tests not successfull some diff output will show
 	#
-	uri_test
+	./uri_test
 
-uri_schemes_hash.c: SCHEMES
+#
+# The minimal hash table found for fields is 13 entries. I didn't
+# find a convinient way to use it, however.
+# gperf -n -k1,2,3 -j1 <<!
+# scheme
+# host
+# port
+# path
+# params
+# query
+# frag
+# user
+# passwd
+# !
+#
+uri_schemes_hash.c: SCHEMES 
 	gperf -k2-4 -c -G -W uri_scheme_list -H uri_scheme_hash -N uri_scheme_exists < SCHEMES > uri_schemes_hash.c
+	$(MAKE) gen_schemes
 	gen_schemes `ls uri_scheme_*.c | sed -e 's/uri_scheme_\(.*\).c/\1/'`
+
+uri_scheme_generic.o: uri_escapes_generic.h
+
+uri_escapes_generic.h uri_escapes_file.h uri_escapes_news.h:: uri_escapes.txt
+	gen_escapes
 
 $(LIB): $(LIB_OBJ)
 

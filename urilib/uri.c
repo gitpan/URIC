@@ -22,26 +22,25 @@
 
 #include <uri_util.h>
 #include <uri.h>
+#include <uri_private.h>
 #include <uri_schemes.h>
 
 static int verbose = 0;
 
-static uri_t* uri_object = 0;
+static uri_t* _uri_object = 0;
 
-/*
- * Global parameters
- */
-typedef struct mode {
-  int flag;
-} uri_mode_t;
-
-static uri_mode_t mode = {
+uri_mode_t mode = {
   URI_MODE_FLAG_DEFAULT,
 };
 
-void uri_mode(int flag)
+void uri_mode_set(int flag)
 {
   mode.flag = flag;
+}
+
+int uri_mode()
+{
+  return mode.flag;
 }
 
 int uri_modep(int flag)
@@ -52,27 +51,31 @@ int uri_modep(int flag)
 /*
  * uri_t allocation and deallocation
  */
-uri_t* uri2object(char* uri, int uri_length)
+uri_t* uri_object(char* uri, int uri_length)
 {
-  if(uri_object) {
-    int cannonical = uri_realloc(uri_object, uri, uri_length);
-    return cannonical == URI_CANNONICAL ? uri_object : 0;
+  if(_uri_object) {
+    int cannonical = uri_realloc(_uri_object, uri, uri_length);
+    return cannonical == URI_CANNONICAL ? _uri_object : 0;
   } else
-    return uri_object = uri_alloc(uri, uri_length);
+    return _uri_object = uri_alloc(uri, uri_length);
+}
+
+uri_t* uri_alloc_1() {
+  uri_t* object = (uri_t*)smalloc(sizeof(uri_t));
+  memset(object, '\0', sizeof(uri_t));
+  return object;
 }
 
 uri_t* uri_alloc(char* uri, int uri_length)
 {
-  uri_t* object = (uri_t*)smalloc(sizeof(uri_t));
+  uri_t* object = uri_alloc_1();
 
-  memset(object, '\0', sizeof(uri_t));
-  object->pool = (char*)smalloc(uri_length + 1);
+  static_alloc(&object->pool, &object->pool_size, uri_length + 1);
   memcpy(object->pool, uri, uri_length);
   object->pool[uri_length] = '\0';
-  object->pool_size = uri_length + 1;
 
   uri_parse(object);
-  if((mode.flag & URI_MODE_CANNONICAL) && uri_cannonicalize(object, URI_CANNONICALIZE_TRANSFORM) != URI_CANNONICAL) {
+  if((mode.flag & URI_MODE_CANNONICAL) && uri_cannonicalize(object) != URI_CANNONICAL) {
     uri_free(object);
     return 0;
   } else {
@@ -84,22 +87,23 @@ int uri_realloc(uri_t* object, char* uri, int uri_length)
 {
   uri_clear(object);
 
-  if(object->pool_size < uri_length + 1) {
-    object->pool = (char*)srealloc(object->pool, uri_length + 1);
-    object->pool_size = uri_length + 1;
-  }
+  static_alloc(&object->pool, &object->pool_size, uri_length + 1);
   memcpy(object->pool, uri, uri_length);
   object->pool[uri_length] = '\0';
   uri_parse(object);
-  return uri_cannonicalize(object, (mode.flag & URI_MODE_CANNONICAL) ? URI_CANNONICALIZE_TRANSFORM : URI_CANNONICALIZE_TEST);
+  return uri_cannonicalize(object);
 }
 
 void uri_free(uri_t* object)
 {
-  if(object->uri) free(object->uri);
-  if(object->furi) free(object->furi);
-  if(object->robots) free(object->robots);
-  free(object->pool);
+  uri_clear(object);
+#define D(w) if(object->w) free(object->w)
+  D(uri);
+  D(furi);
+  D(robots);
+  D(pool);
+#undef D
+  if(object->cannonical) uri_free(object->cannonical);
   free(object);
 }
 
@@ -109,47 +113,74 @@ void uri_free(uri_t* object)
 
 void uri_clear(uri_t* object)
 {
-  object->scheme = 0;
-  object->host = 0;
-  object->port = 0;
-  object->path = 0;
-  object->params = 0;
-  object->query = 0;
-  object->frag = 0;
-  object->user = 0;
-  object->passwd = 0;
+#define D(w,f) \
+  if(object->info & URI_INFO_M_##f) \
+    free(object->w); \
+  object->w = 0
+  D(scheme,SCHEME);
+  D(host,HOST);
+  D(port,PORT);
+  D(path,PATH);
+  D(params,PARAMS);
+  D(query,QUERY);
+  D(frag,FRAG);
+  D(user,USER);
+  D(passwd,PASSWD);
+#undef D
   object->info = 0;
 }
 
+uri_t* uri_clone(uri_t* from)
+{
+  uri_t* to = uri_alloc_1();
+  uri_copy(to, from);
+  return to;
+}
+
+/*
+ * Copy an uri object into another. Cache information is not kept,
+ * the cannonical form is not copied, the URL string is allocated in
+ * pool, even if each field has its own malloc'd space in the source.
+ * The destination object need not be a virgin object.
+ */
 void uri_copy(uri_t* to, uri_t* from)
 {
-  if(to->pool_size < from->pool_size) {
-    to->pool = (char*)srealloc(to->pool, from->pool_size);
-    to->pool_size = from->pool_size;
-  }
+  static_alloc(&to->pool, &to->pool_size, uri_estimate_pool_size(from));
 
   {
     int length;
     char* p = to->pool;
-#define reloc(w) if(from->w) { length = strlen(from->w); memcpy(p, from->w, length + 1); p += length; } else { to->w = 0; }
-    reloc(scheme);
-    reloc(host);
-    reloc(port);
-    reloc(path);
-    reloc(params);
-    reloc(query);
-    reloc(frag);
-    reloc(user);
-    reloc(passwd);
+#define reloc(w,f) \
+  if(to->info & URI_INFO_M_##f) \
+    free(to->w); \
+  if(from->w) { \
+    length = strlen(from->w); \
+    memcpy(p, from->w, length + 1); \
+    to->w = p; \
+    p += length + 1; \
+  } else { \
+    to->w = 0; \
   }
-  to->info = from->info;
-  if(to->uri) {
-    if(to->uri_size < from->uri_size) {
-      to->uri = (char*)srealloc(to->uri, from->uri_size);
-      to->uri_size = from->uri_size;
-    }
-    strcpy(to->uri, from->uri);
+    reloc(scheme,SCHEME);
+    reloc(host,HOST);
+    reloc(port,PORT);
+    reloc(path,PATH);
+    reloc(params,PARAMS);
+    reloc(query,QUERY);
+    reloc(frag,FRAG);
+    reloc(user,USER);
+    reloc(passwd,PASSWD);
   }
+#undef reloc
+  to->info = from->info & ~URI_INFO_COPY_MASK;
+#define D(w) \
+  if(to->w) to->w[0] = '\0'
+  D(uri);
+  D(furi);
+  D(robots);
+#undef D
+  to->desc = from->desc;
+  to->cannonical = 0;
 }
 
 /*
@@ -177,8 +208,8 @@ char* uri_furi_string(char* uri, int uri_length, int flag)
 {
   static char* path = 0;
   static int path_size = 0;
-  uri_t* uri_object = uri2object(uri, uri_length);
-  char* furi = uri_furi(uri_object);
+  uri_t* object = uri_object(uri, uri_length);
+  char* furi = uri_furi(object);
   int furi_length;
   char* wlroot = 0;
 
@@ -200,87 +231,15 @@ char* uri_furi_string(char* uri, int uri_length, int flag)
 }
 
 /*
- * Access structure fields
+ * Consistency checks
  */
-int uri_info(uri_t* object) { return object->info; }
-#define D(n) char* uri_##n(uri_t* object) { return object->n; }
-D(scheme)
-D(host)
-     /* D(port) */
-D(path)
-D(params)
-D(query)
-D(frag)
-D(user)
-D(passwd)
-     
-char* uri_netloc(uri_t* object)
+int uri_consistent(uri_t* object)
 {
-  static char* netloc = 0;
-  static int netloc_size = 0;
-
-  static_alloc(&netloc, &netloc_size, object->pool_size);
-
-  if(object->port) {
-    sprintf(netloc, "%s:%s", object->host, object->port);
-  } else {
-    if(!object->host) {
-      uri_error(object->pool_size, "uri_netloc: expected host for %s\n", uri_uri(object));
-      return 0;
-    } else {
-      strcpy(netloc, object->host);
-    }
+  if(object->info & URI_INFO_FIELD_CHANGED) {
+    char* uri = uri_uri(object);
+    uri_realloc(object, uri, strlen(uri));
   }
-
-  return netloc;
-}
-
-char* uri_auth(uri_t* object)
-{
-  static char* auth = 0;
-  static int auth_size = 0;
-
-  static_alloc(&auth, &auth_size, object->pool_size);
-
-  if(object->user && object->passwd) {
-    sprintf(auth, "%s:%s", object->user, object->passwd);
-  } else {
-    auth[0] = '\0';
-  }
-
-  return auth;
-}
-
-char* uri_all_path(uri_t* object)
-{
-  static char* path = 0;
-  static int path_size = 0;
-
-  static_alloc(&path, &path_size, object->pool_size);
-
-  path[0] = '\0';
-
-  if(!(object->info & URI_INFO_RELATIVE) ||
-     !(object->info & URI_INFO_RELATIVE_PATH))
-    strcat(path, "/");
-  strcat(path, object->path);
-  if(object->params) {
-    strcat(path, ";");
-    strcat(path, object->params);
-  }
-  if(object->query) {
-    strcat(path, "?");
-    strcat(path, object->query);
-  }
-
-  return path;
-}
-
-char* uri_port(uri_t* object)
-{
-  if(object->port) return object->port;
-  if(object->desc && object->desc->port_int > 0) return object->desc->port_char;
-  return "";
+  return object->info & URI_INFO_PARSED;
 }
 
 /*
@@ -338,7 +297,7 @@ int cannonicalize_component(uri_t* object, char* from, char* to, int spec, char*
   while(*from) {
     unsigned char c;
     int coded;
-    if(*from == '%' && from[1] && from[2]) {
+    if(*from == '%' && isxdigit(from[1]) && isxdigit(from[2])) {
       c = (hex2char[from[1] & 0x7f] << 4) | hex2char[from[2] & 0x7f];
       from += 3;
       coded = 1;
@@ -373,15 +332,91 @@ int cannonicalize_component(uri_t* object, char* from, char* to, int spec, char*
 
 char* uri_cannonicalize_string(char* uri, int uri_length, int flag)
 {
-  uri_t* object = uri2object(uri, uri_length);
+  uri_t* object = uri_object(uri, uri_length);
   if(!object) return 0;
-  if(!uri_cannonicalp(object) && uri_cannonicalize(object, URI_CANNONICALIZE_TRANSFORM) != URI_CANNONICAL) return 0;
+  if(!uri_cannonicalp(object) && uri_cannonicalize(object) != URI_CANNONICAL) return 0;
+  if((mode.flag & URI_MODE_CANNONICAL) == 0)
+    object = object->cannonical;
   uri_string(object, &object->uri, &object->uri_size, flag);
   return object->uri;
 }
 
+uri_t* uri_cannonical(uri_t* object)
+{
+  if(uri_cannonicalize(object) != URI_CANNONICAL)
+    return 0;
+  if(mode.flag & URI_MODE_CANNONICAL)
+    return object;
+  else
+    return object->cannonical;
+}
+
 /*
- * Show structure
+ * In another file to prevent messing emacs with 8 bit chars
+ */
+#include "uri_escape_string.h"
+
+/*
+ * Escaping
+ */
+char* uri_escape(char* string, char* range)
+{
+  static char* escaped = 0;
+  static int escaped_size = 0;
+  int string_length = strlen(string);
+  char* p;
+
+  if(!range || strlen(range) == 0)
+    range = uri_escape_default;
+
+  static_alloc(&escaped, &escaped_size, string_length * 3);
+
+  p = escaped;
+  while(*string) {
+    if(strchr(range, *string)) {
+      unsigned char c = *string;
+      *p++ = '%';
+      *p++ = char2hex[(c >> 4) & 0xf];
+      *p++ = char2hex[c & 0xf];
+    } else {
+      *p++ = *string;
+    }
+    string++;
+  }
+  *p = '\0';
+
+  return escaped;
+}
+
+char* uri_unescape(char* string)
+{
+  static char* unescaped = 0;
+  static int unescaped_size = 0;
+  
+  int string_length = strlen(string);
+
+  char* p;
+  static_alloc(&unescaped, &unescaped_size, string_length + 1);
+  
+  p = unescaped;
+  while(*string) {
+    unsigned char c;
+    int coded;
+    if(*string == '%' && isxdigit(string[1]) && isxdigit(string[2])) {
+      *p = (hex2char[string[1] & 0x7f] << 4) | hex2char[string[2] & 0x7f];
+      string += 3;
+    } else {
+      *p = *string++;
+    }
+    p++;
+  }
+  *p = '\0';
+
+  return unescaped;
+}
+
+/*
+ * Dump uri_t content
  */
 void uri_dump(uri_t* object)
 {
@@ -395,6 +430,15 @@ void uri_dump(uri_t* object)
   flag(URI_INFO_RELATIVE_PATH);
   flag(URI_INFO_EMPTY);
   flag(URI_INFO_PARSED);
+  flag(URI_INFO_M_SCHEME);
+  flag(URI_INFO_M_HOST);
+  flag(URI_INFO_M_PORT);
+  flag(URI_INFO_M_PATH);
+  flag(URI_INFO_M_PARAMS);
+  flag(URI_INFO_M_QUERY);
+  flag(URI_INFO_M_FRAG);
+  flag(URI_INFO_M_USER);
+  flag(URI_INFO_M_PASSWD);
 #undef flag
   printf("\n");
 

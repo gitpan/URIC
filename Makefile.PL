@@ -7,13 +7,13 @@
 #
 # Makefile.PL was hand made
 #
-# swig -perl5 -shadow uri.i
+# swig -perl5 -exportall -shadow URIC.i
 #
 
 require 5.004;
 use strict;
 
-$::VERSION = '2.01';
+$::VERSION = '2.02';
 
 sub config_lib {
   system("cd urilib ; ./configure --with-pic ; make all")
@@ -23,10 +23,10 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
 	'VERSION' => $::VERSION,
 	'CONFIGURE' => \&config_lib,
-	'NAME'	 => 'uri',
+	'NAME'	 => 'URIC',
 	'LIBS'   => ["-Lurilib -luri"],
 	'INC'	 => '-Iurilib',
-	'OBJECT' => 'uri_wrap.o'
+	'OBJECT' => 'URIC_wrap.o'
 );
 
 package MY;
@@ -35,7 +35,7 @@ sub postamble
 {
   return <<EOF
 clean realclean test ::
-	\$(MAKE) -C urilib \$@
+	cd urilib ; \$(MAKE) \$@
 
 pack : clean realclean
 	cd .. ; gtar -zchvf uri-$::VERSION.tar.gz uri-$::VERSION

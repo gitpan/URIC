@@ -1,15 +1,29 @@
-Version 2.00
+Version 2
 
-uri is a library that analyses URIs and transform them. It is designed to
+URIC is a library that analyses URIs and transform them. It is designed to
 be fast and occupy as few memory as possible. The basic usage of this
 library is to transform an URI into a structure with one field for each
-component of the URI and vice versa.
+component of the URI and vice versa. It is available as a C library and
+as a Perl library.
 
-It is available as a C library and as a Perl library.
+The documentation is in urilib/uri.3 manual page and contains
+a few examples. The module providing a direct interface to this library
+is URIC. Here is a short usage example:
+
+use URIC;
+$uri = "http://www.dummy.fr/foo?bar";
+$uri_object = uri_alloc($uri, length($uri));
+print uri_path($uri_object) . "\n";
+
+An attempt to provide a module compatible with URI::URL module may be
+found in URI2::URL. It is 95% compatible (see at the beginning of the
+URL.pm file for incomptibilities) and runs 3 times faster. I'm still 
+working on it.
 
 . Requirements
 	ANSI C compiler
   	perl-5.004 or higher
+	GNU ar may is required on sunos, otherwise filenames are truncated.
 
 . To compile and install
 
@@ -20,10 +34,6 @@ It is available as a C library and as a Perl library.
 . To test
 
 	make test
-
-. The documentation is in urilib/uri.3 manual page and contains
-  a few examples.
-
 
 Loic Dachary
 Civil Engineering in Cyberspace

@@ -27,14 +27,16 @@ AC_SUBST(PIC_CFLAGS)
 
 AC_PATH_PROG(SH, sh)
 AC_SUBST(SH)
+AC_PATH_PROG(PERL, perl)
+AC_SUBST(PERL)
 
 AC_HEADER_STDC
 
-AC_CHECK_HEADERS(stdlib.h string.h ctype.h stdarg.h)
+AC_CHECK_HEADERS(stdlib.h string.h ctype.h stdarg.h time.h)
 AC_CHECK_FUNCS(strchr memcpy strstr strcmp strncmp strncpy)
 AC_CHECK_FUNCS(vsprintf)
 
 VERSION=2.00
 AC_SUBST(VERSION)
 
-AC_OUTPUT(Makefile uri_test, [chmod +x uri_test])
+AC_OUTPUT(Makefile uri_test gen_escapes, [chmod +x uri_test gen_escapes])

@@ -92,4 +92,5 @@ main(int argc, char** argv)
   fprintf(fp, "\n");
   fclose(fp);
 
+  exit(0);
 }

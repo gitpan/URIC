@@ -1,0 +1,4 @@
+#
+# Prevent name clashes until the library is fully compatible.
+#
+find . -type f -print | xargs grep -l URI:: | xargs perl -pi -e 's/URI::/URI2::/g'

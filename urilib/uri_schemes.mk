@@ -1,1 +1,1 @@
-URI_SCHEMES = liburi.a(uri_scheme_ftp.o) liburi.a(uri_scheme_http.o) liburi.a(uri_scheme_https.o) liburi.a(uri_scheme_mailto.o) 
+URI_SCHEMES = liburi.a(uri_scheme_file.o) liburi.a(uri_scheme_ftp.o) liburi.a(uri_scheme_news.o) liburi.a(uri_scheme_http.o) liburi.a(uri_scheme_https.o) liburi.a(uri_scheme_wais.o) liburi.a(uri_scheme_telnet.o) liburi.a(uri_scheme_mailto.o) liburi.a(uri_scheme_nntp.o) liburi.a(uri_scheme_finger.o) liburi.a(uri_scheme_gopher.o) liburi.a(uri_scheme_prospero.o) liburi.a(uri_scheme_snews.o) liburi.a(uri_scheme_rlogin.o) 

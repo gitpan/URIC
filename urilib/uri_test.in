@@ -38,12 +38,45 @@ testing() {
   done
 }
 
-all() {
-t_uri < t_uri.input
+parse_uri() {
+echo "# "
+echo "# Auto cannonical is on"
+echo "# "
+./t_uri -stdin < t_uri.input
 }
 
-uri_03() {
-t_uri < t_uri2.input
+parse_uri_verbatim() {
+echo "# "
+echo "# Auto cannonical is off"
+echo "# "
+./t_uri -stdin -no_cannonical < t_uri.input
 }
 
-testing ${*:-"all uri_03"}
+uri_fielding_03() {
+echo "# "
+echo "# Auto cannonical is on"
+echo "# "
+./t_uri -stdin < t_uri2.input
+}
+
+uri_fielding_03_verbatim() {
+echo "# "
+echo "# Auto cannonical is off"
+echo "# "
+./t_uri -stdin -no_cannonical < t_uri2.input
+}
+
+uri_fielding_03_strict() {
+echo "# "
+echo "# Strict is on"
+echo "# "
+./t_uri -stdin -uri_strict < t_uri2.input
+}
+
+run_test() {
+./t_uri -run_test
+./t_uri -run_test -field_malloc
+}
+
+testing ${*:-"run_test parse_uri parse_uri_verbatim uri_fielding_03 uri_fielding_03_verbatim"}
+

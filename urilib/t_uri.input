@@ -188,10 +188,8 @@ document.html http://www.senat.fr/
 /document.html http://www.senat.fr/iway/
 #
 # Double slash at the beginning of the relative URL
-# (it was bugous, www.curie.u-psud.fr~boureux being taken
-#  as a netloc, in the relative URL).
 #
-//www.curie.u-psud.fr~boureux/umr146/ http://www.curie.fr/
+//www.curie.u-psud.fr/umr146/ http://www.curie.fr/
 #
 # Strip extra / in path.
 #
@@ -199,12 +197,161 @@ http://www.foo.bar/bar//foo/file//
 #
 # Strip extra / in path for relative URLs
 #
-//bar/////bbobo/grunt.html http://www.pire.org/
+/bar/////bbobo/grunt.html http://www.pire.org/
 #
 # ftp scheme
 #
 ftp://www.foo.bar/bar/
 #
+# no query part and ? not escaped
+#
+ftp://www.foo.bar/bar?foo/bar
+#
+# anonymous user is implicit
+#
+ftp://ftp@www.foo.bar/bar?foo/bar
+#
+# anonymous user is implicit
+#
+ftp://anonymous@www.foo.bar/bar?foo/bar
+#
+# anonymous user is not implicit if password specified
+#
+ftp://anonymous:pass@www.foo.bar/bar?foo/bar
+#
 # mailto scheme
 #
 mailto:loic@ceic.com
+#
+# file scheme
+#
+file:/dir/a/b/c.html
+#
+# with hostname
+#
+file://hostname/dir/a/b/c.html
+#
+# with hostname = localhost, ignored
+#
+file://locAlhost/dir/a/b/c.html
+#
+# with hostname null
+#
+file:///dir/a/b/c.html
+#
+# with frag
+#
+file://dir/a/b/c.html#frag
+#
+# with ? in path, must not be escaped as it
+# would be in http for instance
+#
+file:/dir/a/b?/c.html
+#
+# gopher scheme
+#
+gopher://host:10/Tfoo%09bar%09foobar
+#
+# missing all -> type = 1
+#
+gopher://host
+#
+# only type + selector + search
+#
+gopher://host/Tfoo%09bar
+#
+# only type + selector
+#
+gopher://host/Tfoo
+#
+# only type
+#
+gopher://host/T
+#
+# news scheme
+#
+news:alt.adoptive.parenting
+#
+# Article
+#
+news:EFGJG4.7A@deshaw.com
+#
+# Article + host
+#
+news://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+#
+# Group + host
+#
+news://adenine.c.dna.affrc.go.jp/misc.transport.air-industry.cargo
+#
+# Empty article or group
+#
+news://news.foo.com/
+#
+# snews scheme
+#
+snews://binky.capnet.state.tx.us/5rb1or$67v@news.jumpnet.com
+#
+# nntp scheme
+#
+nntp://news.ceic.com/alt.binaries/234
+#
+# missing article
+#
+nntp://news.ceic.com/alt.binaries
+#
+# missing group
+#
+nntp://news.ceic.com/
+#
+# other port
+#
+nntp://news.ceic.com:8080/alt.binaries/234
+#
+# superfluous port
+#
+nntp://news.ceic.com:119/alt.binaries/234
+#
+# superfluous /
+#
+nntp://news.ceic.com///alt.binaries/234
+#
+# empty host
+#
+nntp:///alt.binaries/234
+#
+# wais scheme
+#
+wais://wais.ceic.com/base
+#
+# including query
+#
+wais://wais.ceic.com/base?query
+#
+# including wtype and wpath
+#
+wais://wais.ceic.com/base/wtype/wpath
+#
+# including wtype and wpath and query
+#
+wais://wais.ceic.com/base/wtype/wpath?query
+#
+# missing wpath
+#
+wais://wais.ceic.com/base/wtype
+#
+# superflous port
+#
+wais://wais.ceic.com:210/base/wtype/wpath
+#
+# superflous /
+#
+wais://wais.ceic.com//base/wtype/wpath
+#
+# other port
+#
+wais://wais.ceic.com:8080//base/wtype/wpath
+#
+# user auth
+#
+wais://usr:pass@wais.ceic.com//base/wtype/wpath

@@ -1,7 +1,7 @@
 /* C code produced by gperf version 2.7 */
 /* Command-line: gperf -k2-4 -c -G -W uri_scheme_list -H uri_scheme_hash -N uri_scheme_exists  */
 
-#define TOTAL_KEYWORDS 39
+#define TOTAL_KEYWORDS 40
 #define MIN_WORD_LENGTH 2
 #define MAX_WORD_LENGTH 8
 #define MIN_HASH_VALUE 2
@@ -111,7 +111,8 @@ static const char * uri_scheme_list[] =
     "whois++",
     "prospero",
     "smtp",
-    "", "", "", "",
+    "snews",
+    "", "", "",
     "t120",
     "", "", "", "", "", "", "", "", "",
     "", "",

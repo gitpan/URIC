@@ -1,4 +1,14 @@
+/* 09 */ extern uri_scheme_desc_t uri_scheme_file_desc; /* file */
 /* 18 */ extern uri_scheme_desc_t uri_scheme_ftp_desc; /* ftp */
+/* 29 */ extern uri_scheme_desc_t uri_scheme_news_desc; /* news */
 /* 34 */ extern uri_scheme_desc_t uri_scheme_http_desc; /* http */
 /* 35 */ extern uri_scheme_desc_t uri_scheme_https_desc; /* https */
+/* 45 */ extern uri_scheme_desc_t uri_scheme_wais_desc; /* wais */
+/* 46 */ extern uri_scheme_desc_t uri_scheme_telnet_desc; /* telnet */
 /* 52 */ extern uri_scheme_desc_t uri_scheme_mailto_desc; /* mailto */
+/* 54 */ extern uri_scheme_desc_t uri_scheme_nntp_desc; /* nntp */
+/* 56 */ extern uri_scheme_desc_t uri_scheme_finger_desc; /* finger */
+/* 61 */ extern uri_scheme_desc_t uri_scheme_gopher_desc; /* gopher */
+/* 63 */ extern uri_scheme_desc_t uri_scheme_prospero_desc; /* prospero */
+/* 65 */ extern uri_scheme_desc_t uri_scheme_snews_desc; /* snews */
+/* 81 */ extern uri_scheme_desc_t uri_scheme_rlogin_desc; /* rlogin */
